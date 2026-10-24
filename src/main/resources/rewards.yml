@@ -1,0 +1,156 @@
+#  Flare Referrals · rewards.yml — what players get
+#  In-game: /referrals settings > Referral rewards / Milestones
+#
+#  inviter      the player written in /referrals <player>
+#  invited      the new player who uses /referrals <player>
+#  milestones   extra rewards at X invites   ·   repeat: true = every X (3, 6, 9...)
+#
+#  items        drag them in-game, or "DIAMOND:5"
+#  currencies   <id from config.yml>: <amount>
+#  commands     run by console, no /   ·   "lp user {player} parent add vip"
+#  messages     to the player   ·   broadcast: to everyone
+#  display      title, subtitle, actionbar, bossbar   ·   times in ticks (20 = 1s)
+#  Placeholders {player} {invites} {milestone} {inviter} {invited} {prefix}
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+referral:
+  # Owner of the referral code (the player written in /referrals <player>)
+  inviter:
+    enabled: true
+    items:
+      - "DIAMOND:2"
+    currencies:
+      money: 250
+    commands: []
+    messages:
+      - "{prefix}&7You received your invite reward for &f{invited}&7!"
+    broadcast: []
+    display:
+      title:
+        title: ""
+        subtitle: ""
+        fade-in: 10
+        stay: 60
+        fade-out: 20
+      actionbar: "&a+1 invite &7» &f{invited} &7joined thanks to you"
+      bossbar:
+        text: ""
+        color: PINK
+        style: PROGRESS
+        seconds: 5
+  # Player who used /referrals <player>
+  invited:
+    enabled: true
+    items:
+      - "IRON_INGOT:8"
+    currencies:
+      money: 100
+    commands: []
+    messages:
+      - "{prefix}&7Thanks for joining through &f{inviter}&7! Here is your welcome reward."
+    broadcast: []
+    display:
+      title:
+        title: "<gradient:#ff5f6d:#ffc371><bold>WELCOME</bold></gradient>"
+        subtitle: "&7Invited by &f{inviter}"
+        fade-in: 10
+        stay: 60
+        fade-out: 20
+      actionbar: ""
+      bossbar:
+        text: ""
+        color: PINK
+        style: PROGRESS
+        seconds: 5
+
+milestones:
+  '3':
+    enabled: true
+    repeat: false
+    name: "<gradient:#ffb347:#ffcc33>3 Invites</gradient>"
+    icon: IRON_BLOCK
+    items:
+      - "GOLDEN_APPLE:3"
+    currencies:
+      money: 1000
+      mobcoins: 25
+    commands: []
+    messages:
+      - "{prefix}&aYou reached &f3 invites&a! Milestone reward received."
+    broadcast: []
+    display:
+      title:
+        title: "&e3 INVITES"
+        subtitle: "&7Milestone reward received"
+        fade-in: 10
+        stay: 60
+        fade-out: 20
+      actionbar: ""
+      bossbar:
+        text: "<gradient:#ff5f6d:#ffc371>Milestone 3 invites reached!</gradient>"
+        color: YELLOW
+        style: PROGRESS
+        seconds: 6
+  '5':
+    enabled: true
+    repeat: false
+    name: "<gradient:#ff5f6d:#ffc371>5 Invites</gradient>"
+    icon: GOLD_BLOCK
+    items:
+      - "DIAMOND:8"
+    currencies:
+      money: 2500
+      tokens: 50
+    commands: []
+    messages:
+      - "{prefix}&aYou reached &f5 invites&a! Milestone reward received."
+    broadcast:
+      - "{prefix}&f{player} &7reached &e5 invites&7!"
+    display:
+      title:
+        title: "&e5 INVITES"
+        subtitle: "&7Milestone reward received"
+        fade-in: 10
+        stay: 60
+        fade-out: 20
+      actionbar: ""
+      bossbar:
+        text: "<gradient:#ff5f6d:#ffc371>Milestone 5 invites reached!</gradient>"
+        color: YELLOW
+        style: PROGRESS
+        seconds: 6
+  '10':
+    enabled: true
+    repeat: false
+    name: "<gradient:#00c6ff:#0072ff>10 Invites</gradient>"
+    icon: DIAMOND_BLOCK
+    items:
+      - "NETHERITE_INGOT:1"
+    currencies:
+      money: 7500
+      mobcoins: 100
+      coins: 50
+    commands: []
+    messages:
+      - "{prefix}&aYou reached &f10 invites&a! Milestone reward received."
+    broadcast:
+      - "{prefix}&f{player} &7reached &b10 invites&7! Legend."
+    display:
+      title:
+        title: "&e10 INVITES"
+        subtitle: "&7Milestone reward received"
+        fade-in: 10
+        stay: 60
+        fade-out: 20
+      actionbar: ""
+      bossbar:
+        text: "<gradient:#ff5f6d:#ffc371>Milestone 10 invites reached!</gradient>"
+        color: YELLOW
+        style: PROGRESS
+        seconds: 6

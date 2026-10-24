@@ -1,0 +1,52 @@
+#  Flare Referrals · menu 'top' (top inviters)
+#  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#
+#  enabled         false = menu off for everyone
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [rewards] → /rewards opens it   ·   open-permission: "" = everyone
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  admin-only      true = players don't see it
+#  actions         [close] [open] top [player] cmd [console] cmd [message] text [sound] key
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+enabled: true
+open-commands: []
+open-permission: ""
+title: "<gradient:#ff5f6d:#ffc371>Top inviters</gradient>"
+rows: 6
+elements:
+  entries:
+    # list of players. name / lore placeholders: {position} {player} {invites}
+    slots: "13,21-23,29-33,40"
+    admin-only: false
+    name: "&e#{position} &f{player}"
+    lore:
+      - "&7Invites: &e{invites}"
+  back:
+    slots: "49"
+    admin-only: false
+    material: "ARROW"
+    name: "&c← Back"
+    lore: []
+decorations:
+  - slots: "0-8,9,17,18,26,27,35,36,44,45-48,50-53"
+    material: "GRAY_STAINED_GLASS_PANE"
+    name: " "
+    lore: []
+    glow: false
+    admin-only: false
+    actions: []
+
+# ── Texts of this menu ──
+# empty = item shown when nobody invited yet
+texts:
+  empty:
+    name: "&cNobody yet"
+    lore: []

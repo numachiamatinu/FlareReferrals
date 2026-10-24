@@ -1,0 +1,58 @@
+#  Flare Referrals · menu 'preview' (what a reward gives)
+#  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#
+#  enabled         false = menu off for everyone
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [rewards] → /rewards opens it   ·   open-permission: "" = everyone
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  admin-only      true = players don't see it
+#  actions         [close] [open] top [player] cmd [console] cmd [message] text [sound] key
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+enabled: true
+open-commands: []
+open-permission: ""
+title: "&7Rewards: {name}"
+rows: 6
+elements:
+  items:
+    # list: the reward items and currencies
+    slots: "10-16,19-25,28-34,37-43"
+    admin-only: false
+  edit:
+    # only admins see it
+    slots: "53"
+    admin-only: true
+    material: "ANVIL"
+    name: "&eEdit"
+    lore:
+      - "&7Admin: edit this milestone"
+  back:
+    slots: "49"
+    admin-only: false
+    material: "ARROW"
+    name: "&c← Back"
+    lore: []
+decorations:
+  - slots: "0-8,9,17,18,26,27,35,36,44,45-48,50-52"
+    material: "GRAY_STAINED_GLASS_PANE"
+    name: " "
+    lore: []
+    glow: false
+    admin-only: false
+    actions: []
+
+# ── Texts of this menu ──
+# title = menu title · currency-lore = lines under a currency · empty = nothing to show
+texts:
+  currency-lore: []
+  empty:
+    name: "&cNo rewards"
+    lore: []

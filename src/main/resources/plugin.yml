@@ -1,0 +1,44 @@
+name: FlareReferrals
+version: '${project.version}'
+main: dev.tmdevelopment.flarereferrals.FlareReferrals
+api-version: '1.16'
+author: TMDevelopment
+description: Referral / invite rewards with milestones, custom currencies and an in-game admin menu.
+softdepend: [PlaceholderAPI, Vault]
+
+commands:
+  referrals:
+    description: FlareReferrals main command
+    aliases: [freferrals, fref, freferral]
+    usage: /referrals <player|info|menu|rewards|top|milestone>
+
+permissions:
+  flarereferrals.use:
+    description: Use /referrals <player>, info, menu, top
+    default: true
+  flarereferrals.info:
+    description: /referrals and /referrals info (also needs player-access.info in config.yml)
+    default: true
+  flarereferrals.menu:
+    description: /referrals menu (also needs player-access.menu)
+    default: true
+  flarereferrals.rewards:
+    description: /referrals rewards (also needs player-access.rewards)
+    default: true
+  flarereferrals.top:
+    description: Top inviters (also needs player-access.top)
+    default: true
+  flarereferrals.preview:
+    description: See what a milestone gives (also needs player-access.preview)
+    default: true
+  flarereferrals.info.others:
+    description: See the referral info of other players
+    default: op
+  flarereferrals.admin:
+    description: Open /referrals settings, edit rewards, reload, admin commands
+    default: op
+    children:
+      flarereferrals.info.others: true
+  flarereferrals.bypass:
+    description: Bypass playtime and same-IP checks
+    default: op

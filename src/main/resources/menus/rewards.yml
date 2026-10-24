@@ -1,0 +1,94 @@
+#  Flare Referrals · menu 'rewards' (/referrals rewards)
+#  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#
+#  enabled         false = menu off for everyone
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [rewards] → /rewards opens it   ·   open-permission: "" = everyone
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  admin-only      true = players don't see it
+#  actions         [close] [open] top [player] cmd [console] cmd [message] text [sound] key
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+enabled: true
+open-commands: []
+open-permission: ""
+title: "<gradient:#ff5f6d:#ffc371>Referral rewards</gradient>"
+rows: 5
+elements:
+  info:
+    slots: "4"
+    admin-only: false
+    material: "BOOK"
+    name: "&fHow referrals work"
+    lore:
+      - "&7Invited by a friend? Write"
+      - "&f/referrals <his name>&7:"
+      - "&7 • &ethe inviter &7gets the left reward"
+      - "&7 • &athe new player &7gets the right reward"
+      - ""
+      - "&7Milestone rewards are separate."
+  inviter:
+    # placeholders: {status}. The reward list is added under the lore automatically
+    slots: "20"
+    admin-only: false
+    material: "PLAYER_HEAD"
+    name: "&eInviter reward"
+    lore:
+      - "&7Given every time a new player"
+      - "&7enters you as who invited him."
+      - ""
+      - "&7Status: {status}"
+      - ""
+  milestones:
+    slots: "22"
+    admin-only: false
+    material: "NETHER_STAR"
+    name: "&6Milestones"
+    lore:
+      - "&7Extra rewards at 3 / 5 / 10 invites."
+      - ""
+      - "&eClick to open"
+  invited:
+    # placeholders: {status}. The reward list is added under the lore automatically
+    slots: "24"
+    admin-only: false
+    material: "EMERALD"
+    name: "&aWelcome reward"
+    lore:
+      - "&7Given to the new player when"
+      - "&7he enters who invited him."
+      - ""
+      - "&7Status: {status}"
+      - ""
+  back:
+    slots: "40"
+    admin-only: false
+    material: "ARROW"
+    name: "&c← Back"
+    lore: []
+decorations:
+  - slots: "0-3,5-8,9,17,18,26,27,35,36-39,41-44"
+    material: "GRAY_STAINED_GLASS_PANE"
+    name: " "
+    lore: []
+    glow: false
+    admin-only: false
+    actions: []
+
+# ── Texts of this menu ──
+# click-* = lines added under the two rewards
+texts:
+  click-admin:
+  - ""
+  - "&eLeft-click &7edit"
+  - "&eRight-click &7turn on/off"
+  click-player:
+  - ""
+  - "&eClick &7to see the items"

@@ -1,0 +1,135 @@
+#  Flare Referrals · config.yml · by TMDevelopment
+#  In-game: /referrals settings   ·   after editing this file: /referrals reload
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+language: en
+
+# Missing plugins are downloaded and started automatically (no restart needed).
+# Sources are tried in order: modrinth:<slug>, hangar:<slug>, github:<owner/repo>, url:<direct link>
+# Note: Vault only connects the money; you still need an economy plugin (EssentialsX, CMI...).
+auto-install:
+  enabled: true
+  plugins:
+    PlaceholderAPI:
+      enabled: true
+      sources:
+        - "hangar:PlaceholderAPI"
+        - "modrinth:placeholderapi"
+        - "github:PlaceholderAPI/PlaceholderAPI"
+    Vault:
+      enabled: true
+      sources:
+        - "github:MilkBowl/Vault"
+
+# How it works: a new player writes /referrals <name> with the name of the player who really invited him.
+# Both get a reward (rewards.yml), the inviter gets +1 invite. Each player can do it only once.
+# Every option in this section can also be toggled from /referrals settings
+referral:
+  # Master switch for /referrals <player>
+  enabled: true
+  # A player can't enter an inviter who plays from the same IP (alts). IPs are stored as a hash, never in plain text
+  block-same-ip: true
+  # If B entered A as his inviter, A can't enter B back
+  prevent-circular: true
+  # Minutes a player must play before he can enter who invited him. 0 = disabled
+  min-playtime-minutes: 0
+  # Broadcast a message to the whole server on every referral
+  broadcast: false
+
+# What normal players (without flarereferrals.admin) can open. false = only admins.
+# Also editable in /referrals settings > Player access. With a permissions plugin you can also deny
+# flarereferrals.info / .menu / .rewards / .top / .preview to single groups.
+player-access:
+  # /referrals and /referrals info (invites, inviter, milestones list)
+  info: true
+  # /referrals menu (main menu with progress)
+  menu: true
+  # /referrals rewards (inviter reward and welcome reward)
+  rewards: true
+  # top inviters (/referrals top and the top menu)
+  top: true
+  # see what a milestone / reward gives (click on it)
+  preview: true
+
+milestones:
+  # Give milestone rewards (every 3 / 5 / 10 ... invites)
+  enabled: true
+  # true = reached milestones are collected by the player (click in the menu or /referrals claim)
+  # false = given automatically
+  claim-in-menu: true
+
+rewards:
+  # When the player is offline, keep the reward and give it on next join
+  offline-queue: true
+  # Drop items on the ground when the inventory is full (false = items that don't fit are lost)
+  drop-if-full: true
+
+sounds:
+  enabled: true
+  click: "ui.button.click"
+  success: "entity.player.levelup"
+  reward: "entity.experience_orb.pickup"
+  error: "entity.villager.no"
+
+input:
+  # Word to type in chat to cancel a menu prompt
+  cancel-word: "cancel"
+  # Seconds before a chat prompt expires
+  timeout-seconds: 60
+
+# Currencies usable as rewards. Add as many as you want.
+# mobcoins / tokens / coins are examples: turn them on (enabled: true) only if their plugin is installed.
+# When a currency can't work (plugin missing), the console says why once and the rewards with it are skipped.
+# type:
+#   VAULT      -> economy through Vault (EssentialsX, CMI, ...)
+#   COMMAND    -> runs a console command, use {player} {uuid} {amount}  (MobCoins, Tokens, PlayerPoints, private coins...)
+#   EXP        -> experience points
+#   EXP_LEVELS -> experience levels
+# display: how the reward is shown in menus and messages ({amount} = amount)
+currencies:
+  money:
+    enabled: true
+    type: VAULT
+    name: "&aMoney"
+    display: "&a${amount}"
+    icon: GOLD_INGOT
+  mobcoins:
+    enabled: false
+    type: COMMAND
+    command: "mobcoins give {player} {amount}"
+    name: "&6MobCoins"
+    display: "&6{amount} MobCoins"
+    icon: SUNFLOWER
+  tokens:
+    enabled: false
+    type: COMMAND
+    command: "tokens give {player} {amount}"
+    name: "&bTokens"
+    display: "&b{amount} Tokens"
+    icon: PRISMARINE_CRYSTALS
+  playerpoints:
+    enabled: false
+    type: COMMAND
+    command: "points give {player} {amount}"
+    name: "&dPoints"
+    display: "&d{amount} Points"
+    icon: AMETHYST_SHARD
+  coins:
+    enabled: false
+    type: COMMAND
+    command: "coins give {player} {amount}"
+    name: "&eServer Coins"
+    display: "&e{amount} Coins"
+    icon: RAW_GOLD
+  exp:
+    enabled: true
+    type: EXP_LEVELS
+    name: "&2XP Levels"
+    display: "&2{amount} XP levels"
+    icon: EXPERIENCE_BOTTLE
