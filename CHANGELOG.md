@@ -2,6 +2,9 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.0.20
+- Statistics (TMDStats) are now sent to tmstudio.dev, the new TMDevelopment site. The old address no longer exists.
+
 ## 1.0.19
 - Anonymous usage statistics with TMDStats (TMDevelopment tracker) instead of bStats: plugin and Minecraft version,
   server software, Java version, CPU cores, player count, online mode, milestone mode and number of milestones.
