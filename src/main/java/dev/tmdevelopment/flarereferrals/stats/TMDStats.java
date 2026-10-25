@@ -48,7 +48,7 @@ import java.util.logging.Level;
 public final class TMDStats {
 
     /** Address of the panel that receives the data. */
-        private static final String ENDPOINT = "https://tmstudio.dev/t/v1/ping";
+    private static final String ENDPOINT = "https://tmstudio.dev/t/v1/ping";
     private static final int PROTOCOL = 1;
     private static final long PERIOD_MINUTES = 30;
     private static final int MAX_CUSTOM = 10;
