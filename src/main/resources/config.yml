@@ -10,6 +10,14 @@
 
 language: en
 
+# Anonymous usage statistics (TMDStats): versions, player count and the options listed on the plugin page.
+# No names, UUIDs or IPs. false = this plugin sends nothing (plugins/TMDStats/config.yml turns off all plugins)
+stats: true
+
+# Checks GitHub for a new version (at startup, then at most every 6 hours) and tells admins when they join.
+# It only reads the public releases page, nothing about your server is sent. false = no check
+update-check: true
+
 # Missing plugins are downloaded and started automatically (no restart needed).
 # Sources are tried in order: modrinth:<slug>, hangar:<slug>, github:<owner/repo>, url:<direct link>
 # Note: Vault only connects the money; you still need an economy plugin (EssentialsX, CMI...).
@@ -41,6 +49,10 @@ referral:
   min-playtime-minutes: 0
   # Broadcast a message to the whole server on every referral
   broadcast: false
+  # Days after the first join in which a player can still enter who invited him. 0 = no limit
+  max-days-after-first-join: 0
+  # The invite counts (and the rewards are given) only after the new player played these minutes. 0 = right away
+  verify-after-minutes: 0
 
 # What normal players (without flarereferrals.admin) can open. false = only admins.
 # Also editable in /referrals settings > Player access. With a permissions plugin you can also deny
@@ -56,15 +68,25 @@ player-access:
   top: true
   # see what a milestone / reward gives (click on it)
   preview: true
+  # /referrals collect (rewards waiting to be collected)
+  collect: true
 
 milestones:
   # Give milestone rewards (every 3 / 5 / 10 ... invites)
   enabled: true
-  # true = reached milestones are collected by the player (click in the menu or /referrals claim)
-  # false = given automatically
-  claim-in-menu: true
 
 rewards:
+  # true = rewards wait in /referrals collect until the player takes them (with a notification)
+  # false = given right away. Each reward can change it in rewards.yml (delivery: menu / auto)
+  collect-menu: true
+  # How players are told that something is waiting (texts in lang/en.yml > collect)
+  notify:
+    chat: true
+    title: false
+    actionbar: true
+    sound: true
+  # Reminder every X minutes while something waits. 0 = off
+  remind-minutes: 10
   # When the player is offline, keep the reward and give it on next join
   offline-queue: true
   # Drop items on the ground when the inventory is full (false = items that don't fit are lost)
@@ -133,3 +155,34 @@ currencies:
     name: "&2XP Levels"
     display: "&2{amount} XP levels"
     icon: EXPERIENCE_BOTTLE
+
+# ── Storage ─────────────────────────────────────────────
+# Where the data is saved. Leave yaml if you have one server.
+#   yaml    plugins/FlareReferrals/data.yml (default)
+#   sqlite  plugins/FlareReferrals/data/data.db (one server, many players)
+#   mysql   MySQL / MariaDB database, needed to share referrals between servers (network below)
+# To change it with your data: /referrals migrate <yaml|sqlite|mysql>, it copies everything and sets this for you.
+storage:
+  type: yaml
+  mysql:
+    host: localhost
+    port: 3306
+    database: flarereferrals
+    username: root
+    password: ""
+    # Extra connection settings, change only if your host asks for it
+    properties: "useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8"
+    # Change it only to keep two separate data sets in the same database
+    table-prefix: "fr_"
+
+# ── Network ─────────────────────────────────────────────
+# Lobby, Skyblock, Survival... behind BungeeCord / Velocity sharing the same invites.
+# Install FlareReferrals on every server (lobby too), all with the same storage.mysql settings.
+network:
+  enabled: false
+  # A different name on every server: lobby, skyblock, survival... (used by "servers" in rewards.yml)
+  server-name: ""
+  # false = this server only saves invites and gives no rewards (e.g. the lobby)
+  rewards-here: true
+  # How often servers look for changes made by the others (seconds)
+  sync-seconds: 3

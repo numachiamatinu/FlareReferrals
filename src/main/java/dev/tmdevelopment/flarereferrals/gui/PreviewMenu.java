@@ -54,7 +54,8 @@ public final class PreviewMenu extends LayoutMenu {
         if (!editMode) for (ItemStack it : set.items()) items.add(it.clone()); // editor shows only slot markers
         for (Map.Entry<String, Double> en : editMode ? java.util.Collections.<String, Double>emptyMap().entrySet() : set.currencies().entrySet()) {
             Currency c = plugin.currencies().get(en.getKey());
-            Material icon = c == null ? Material.GOLD_NUGGET : c.icon();
+            if (c == null) continue; // currency turned off: players don't see it (it is not given)
+            Material icon = c.icon();
             items.add(new ItemBuilder(icon)
                     .name(Text.item(plugin.currencies().display(en.getKey(), en.getValue()), viewer))
                     .lore(lang().lore("gui.preview.currency-lore", viewer))

@@ -27,7 +27,7 @@ import java.util.Set;
 public final class ReferralCommand implements TabExecutor {
 
     private static final Set<String> SUBS = new java.util.HashSet<>(java.util.Arrays.asList("info", "menu", "rewards",
-            "top", "milestone", "milestones", "claim", "settings", "reload", "admin", "help", "cancel", "layout", "layouts"));
+            "top", "milestone", "milestones", "claim", "settings", "reload", "admin", "help", "cancel", "layout", "layouts", "migrate", "collect", "version", "ver"));
 
     private final FlareReferrals plugin;
 
@@ -59,7 +59,7 @@ public final class ReferralCommand implements TabExecutor {
                     if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "info.others")) return noPerm(sender);
                     PlayerData d = findData(args[1]);
                     if (d == null) {
-                        lang().send(sender, "referral.not-found", "%player%", args[1]);
+                        lang().send(sender, "admin.player-not-found", "%player%", args[1]);
                         return true;
                     }
                     sendInfo(sender, d.uuid(), d.name());
@@ -77,11 +77,17 @@ public final class ReferralCommand implements TabExecutor {
                 if (args.length >= 2) {
                     int amount;
                     try { amount = Integer.parseInt(args[1]); } catch (NumberFormatException e) { amount = -1; }
-                    if (!plugin.referrals().claim(p, amount)) lang().send(p, "milestone.nothing");
+                    if (!plugin.referrals().claim(p, amount, null)) lang().send(p, "milestone.nothing");
                 } else {
                     int n = plugin.referrals().claimAll(p);
                     if (n == 0) lang().send(p, "milestone.nothing");
                 }
+            }
+        else if ("collect".equals(sub)) {
+                if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
+                Player p = (Player) sender;
+                if (!plugin.canOpen(p, "collect")) return unknown(sender, label);
+                new dev.tmdevelopment.flarereferrals.gui.CollectMenu(plugin, p, plugin.canOpen(p, "menu") ? new PlayerMenu(plugin, p) : null).open();
             }
         else if ("rewards".equals(sub)) {
                 if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
@@ -138,10 +144,16 @@ public final class ReferralCommand implements TabExecutor {
             }
         else if ("reload".equals(sub)) {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
-                plugin.reloadAll();
+                boolean restart = plugin.reloadAll();
                 lang().send(sender, "admin.reloaded");
+                if (restart) lang().send(sender, "admin.restart-needed");
             }
         else if ("admin".equals(sub)) { admin(sender, label, args); }
+        else if ("version".equals(sub) || "ver".equals(sub)) { version(sender); }
+        else if ("migrate".equals(sub)) {
+                if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
+                new MigrateCommand(plugin).run(sender, label, args);
+            }
         else if ("layout".equals(sub) || "layouts".equals(sub)) {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
                 if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
@@ -176,16 +188,51 @@ public final class ReferralCommand implements TabExecutor {
 
     /** Help with only the commands this player can really use. */
     private void help(CommandSender s, String label) {
-        lang().send(s, "help.header", "%label%", label);
-        lang().send(s, "help.lines.refer", "%label%", label);
+        lang().send(s, "help.header", "%label%", label, "%version%", plugin.getDescription().getVersion());
+        if (s instanceof Player && dev.tmdevelopment.flarereferrals.util.Perms.has(s, "use")) lang().send(s, "help.lines.refer", "%label%", label);
         if (plugin.canOpen(s, "info")) lang().send(s, "help.lines.info", "%label%", label);
         if (plugin.canOpen(s, "menu")) lang().send(s, "help.lines.menu", "%label%", label);
+        if (plugin.canOpen(s, "collect")) lang().send(s, "help.lines.collect", "%label%", label);
         if (plugin.canOpen(s, "rewards")) lang().send(s, "help.lines.rewards", "%label%", label);
         if (plugin.canOpen(s, "top")) lang().send(s, "help.lines.top", "%label%", label);
         if (plugin.canOpen(s, "preview")) lang().send(s, "help.lines.milestone", "%label%", label);
-        if (plugin.referrals().claimMode()) lang().send(s, "help.lines.claim", "%label%", label);
+        // /referrals claim is not listed: the [Collect] buttons in chat use it, /referrals collect is the one to type
         if (dev.tmdevelopment.flarereferrals.util.Perms.has(s, "admin")) lang().send(s, "help.admin", "%label%", label);
-        else lang().send(s, "help.footer", "%label%", label);
+        if (canVersion(s)) lang().send(s, "help.lines.version", "%label%", label);
+        lang().send(s, "help.footer", "%label%", label);
+    }
+
+    /** flarereferrals.command.version, also for admins that still have the old flaresrewards.admin. */
+    private static boolean canVersion(CommandSender s) {
+        return dev.tmdevelopment.flarereferrals.util.Perms.has(s, "command.version")
+                || dev.tmdevelopment.flarereferrals.util.Perms.has(s, "admin");
+    }
+
+    /** /referrals version (or ver): versions, storage and whether a new version is out. Works from the console. */
+    private void version(CommandSender s) {
+        if (!canVersion(s)) { noPerm(s); return; }
+        // 1.21.1-R0.1-SNAPSHOT -> 1.21.1, 26.3.build.223 -> 26.3
+        String mc = Bukkit.getBukkitVersion();
+        java.util.regex.Matcher vm = java.util.regex.Pattern.compile("^(\\d+\\.\\d+(?:\\.\\d+)?)").matcher(mc);
+        if (vm.find()) mc = vm.group(1);
+        String network = plugin.data().network()
+                ? Text.replace(lang().raw("version.network"), "%server%", plugin.data().server()) : "";
+        lang().send(s, "version.info", "%version%", plugin.getDescription().getVersion(), "%minecraft%", mc,
+                "%software%", Bukkit.getName(), "%java%", System.getProperty("java.version", "?"),
+                "%storage%", plugin.data().type(), "%network%", network);
+        dev.tmdevelopment.flarereferrals.update.UpdateChecker u = plugin.updates();
+        if (u == null || !u.enabled()) return;
+        if (!u.fresh()) lang().send(s, "version.checking");
+        u.check(() -> {
+            if (s instanceof Player && !((Player) s).isOnline()) return;
+            if (u.result() == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.UPDATE) {
+                lang().send(s, "version.update", "%version%", u.current(), "%latest%", u.latest(), "%url%", u.downloadUrl());
+            } else if (u.result() == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.LATEST) {
+                lang().send(s, "version.latest", "%version%", u.current());
+            } else {
+                lang().send(s, "version.failed");
+            }
+        });
     }
 
     private PlayerData findData(String name) {
@@ -323,7 +370,7 @@ public final class ReferralCommand implements TabExecutor {
         }
         PlayerData d = findData(args[2]);
         if (d == null) {
-            lang().send(sender, "referral.not-found", "%player%", args[2]);
+            lang().send(sender, "admin.player-not-found", "%player%", args[2]);
             return;
         }
         if ("set".equals(action) || "add".equals(action) || "remove".equals(action)) {
@@ -340,33 +387,54 @@ public final class ReferralCommand implements TabExecutor {
                     return;
                 }
                 int before = d.invites();
+                java.util.UUID id = d.uuid();
+                String name = d.name();
+                java.util.function.IntConsumer done = now -> {
+                    if (now < 0) lang().send(sender, "general.database-error");
+                    else lang().send(sender, "admin.invites-updated", "%player%", name,
+                            "%invites%", String.valueOf(now), "%before%", String.valueOf(before));
+                };
+                final int amount = n;
                 if (action.equals("add")) {
-                    plugin.referrals().addInvites(d, n);
+                    plugin.referrals().addInvites(d, amount, done);
                 } else if (action.equals("remove")) {
-                    d.invites(d.invites() - n);
-                    plugin.data().save();
+                    plugin.data().run(ops -> ops.addInvites(id, -amount), v -> done.accept(v == null ? -1 : v));
                 } else {
-                    d.invites(n);
-                    plugin.data().save();
+                    plugin.data().run(ops -> {
+                        ops.setInvites(id, amount);
+                        return amount;
+                    }, v -> done.accept(v == null ? -1 : v));
                 }
-                lang().send(sender, "admin.invites-updated", "%player%", d.name(),
-                        "%invites%", String.valueOf(d.invites()), "%before%", String.valueOf(before));
             }
         else if ("reset".equals(action)) {
-                d.invites(0);
-                d.claimed().clear();
-                d.claimable().clear();
-                d.referredBy(null);
-                d.referredAt(0);
-                d.pending().clear();
-                plugin.data().save();
-                lang().send(sender, "admin.reset", "%player%", d.name());
+                java.util.UUID id = d.uuid();
+                String name = d.name();
+                plugin.data().run(ops -> {
+                    ops.setInvites(id, 0);
+                    ops.clearReferrer(id);
+                    ops.deleteRewards(id, null);
+                    return Boolean.TRUE;
+                }, v -> lang().send(sender, v == null ? "general.database-error" : "admin.reset", "%player%", name));
             }
         else if ("resetclaimed".equals(action)) {
-                d.claimed().clear();
-                d.claimable().clear();
-                plugin.data().save();
-                lang().send(sender, "admin.reset-claimed", "%player%", d.name());
+                java.util.UUID id = d.uuid();
+                String name = d.name();
+                plugin.data().run(ops -> {
+                    // reached / collected milestones are forgotten (given again at the next invite), rewards waiting to be given stay
+                    dev.tmdevelopment.flarereferrals.data.PlayerData cur = ops.player(id);
+                    if (cur != null) {
+                        // ids first: with data.yml the list is the live one and deleting while looping would break it
+                        List<Long> ids = new ArrayList<>();
+                        for (dev.tmdevelopment.flarereferrals.data.RewardEntry e : cur.rewards()) {
+                            if (e.milestone() > 0 && (e.state() == dev.tmdevelopment.flarereferrals.data.RewardEntry.State.CLAIMABLE
+                                    || e.state() == dev.tmdevelopment.flarereferrals.data.RewardEntry.State.DELIVERED)) {
+                                ids.add(e.id());
+                            }
+                        }
+                        for (Long rid : ids) ops.deleteReward(id, rid);
+                    }
+                    return Boolean.TRUE;
+                }, v -> lang().send(sender, v == null ? "general.database-error" : "admin.reset-claimed", "%player%", name));
             }
         else { adminUsage(sender, label, "overview"); }
     }
@@ -379,9 +447,10 @@ public final class ReferralCommand implements TabExecutor {
         boolean admin = dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin");
         if (args.length == 1) {
             List<String> opts = new ArrayList<>(dev.tmdevelopment.flarereferrals.util.J8.list("help", "claim"));
-            for (String k : dev.tmdevelopment.flarereferrals.util.J8.list("info", "menu", "rewards", "top")) if (plugin.canOpen(sender, k)) opts.add(k);
+            for (String k : dev.tmdevelopment.flarereferrals.util.J8.list("info", "menu", "rewards", "top", "collect")) if (plugin.canOpen(sender, k)) opts.add(k);
             if (plugin.canOpen(sender, "preview")) opts.add("milestone");
-            if (admin) opts.addAll(dev.tmdevelopment.flarereferrals.util.J8.list("settings", "layout", "reload", "admin"));
+            if (admin) opts.addAll(dev.tmdevelopment.flarereferrals.util.J8.list("settings", "layout", "reload", "admin", "migrate"));
+            if (canVersion(sender)) opts.add("version");
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (!p.equals(sender)) opts.add(p.getName());
             }
@@ -396,9 +465,13 @@ public final class ReferralCommand implements TabExecutor {
                 filter(onlineNames(), args[1], out);
             } else if (sub.equals("layout") && admin) {
                 filter(dev.tmdevelopment.flarereferrals.layout.LayoutManager.IDS, args[1], out);
+            } else if (sub.equals("migrate") && admin) {
+                filter(dev.tmdevelopment.flarereferrals.util.J8.list("yaml", "sqlite", "mysql"), args[1], out);
             } else if (sub.equals("admin") && admin) {
                 filter(dev.tmdevelopment.flarereferrals.util.J8.list("set", "add", "remove", "reset", "resetclaimed"), args[1], out);
             }
+        } else if (args.length >= 3 && args[0].equalsIgnoreCase("migrate") && admin) {
+            filter(dev.tmdevelopment.flarereferrals.util.J8.list("merge", "confirm"), args[args.length - 1], out);
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin") && admin) {
             filter(onlineNames(), args[2], out);
         } else if (args.length == 4 && args[0].equalsIgnoreCase("admin") && admin

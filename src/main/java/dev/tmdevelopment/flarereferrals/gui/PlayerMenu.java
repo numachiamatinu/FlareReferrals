@@ -34,6 +34,7 @@ public final class PlayerMenu extends LayoutMenu {
         m.put("head", Material.PLAYER_HEAD);
         m.put("milestones", Material.NETHER_STAR);
         m.put("referral-rewards", Material.EMERALD);
+        m.put("collect", Material.CHEST_MINECART);
         m.put("top", Material.KNOWLEDGE_BOOK);
         m.put("settings", Material.COMPARATOR);
         m.put("close", Material.ARROW);
@@ -62,17 +63,25 @@ public final class PlayerMenu extends LayoutMenu {
         for (Milestone m : plugin.rewards().milestoneList()) {
             if (!m.enabled()) continue;
             String state;
-            boolean ready = d != null && d.claimable().contains(m.amount());
+            boolean waiting = d != null && d.claimable().contains(m.amount());
+            // on a network: ready, but only on another server
+            boolean ready = waiting && plugin.referrals().allowedHere(m);
             if (ready) state = "ready";
+            else if (waiting) state = "elsewhere";
             else if (m.repeat()) state = "repeat";
-            else if (invites >= m.amount()) state = "claimed"; // only when really reached
+            else if (invites >= m.amount()) {
+                // reached: "claimed" only when he really has it (after admin set / resetclaimed / a new milestone
+                // it comes with the next invite)
+                state = d != null && d.hasUniq("milestone:" + m.amount()) ? "claimed" : "next-invite";
+            }
             else state = "locked";
             int target = plugin.referrals().nextTarget(m, invites);
             List<Component> lore = new ArrayList<>(lang().lore("gui.player.milestone." + state, viewer,
                     "%amount%", String.valueOf(m.amount()),
                     "%invites%", String.valueOf(invites),
                     "%target%", String.valueOf(target),
-                    "%remaining%", String.valueOf(Math.max(0, target - invites))));
+                    "%remaining%", String.valueOf(Math.max(0, target - invites)),
+                    "%servers%", plugin.referrals().serversText(m)));
             if (ready) lore.addAll(lang().lore("gui.player.milestone.claim-click", viewer));
             else if (plugin.canOpen(viewer, "preview")) lore.addAll(lang().lore("gui.player.milestone.click", viewer));
             if (admin) lore.addAll(lang().lore("gui.player.milestone.admin", viewer));
@@ -84,7 +93,7 @@ public final class PlayerMenu extends LayoutMenu {
             actions.add(e -> {
                 if (admin && e.isShiftClick()) new RewardSetMenu(plugin, viewer, m, this).openLater();
                 else if (ready) {
-                    if (plugin.referrals().claim(viewer, m.amount())) refresh();
+                    plugin.referrals().claim(viewer, m.amount(), this::refresh);
                 }
                 else if (plugin.canOpen(viewer, "preview")) new PreviewMenu(plugin, viewer, m, this).openLater();
             });
@@ -94,6 +103,11 @@ public final class PlayerMenu extends LayoutMenu {
         if (editMode || plugin.canOpen(viewer, "rewards")) {
             element("referral-rewards", new ItemStack(Material.EMERALD), "gui.player.referral-rewards", null, false,
                     e -> new ReferralRewardsMenu(plugin, viewer, this).openLater());
+        }
+        if (editMode || plugin.canOpen(viewer, "collect")) {
+            int waiting = plugin.referrals().collectableHere(viewer);
+            element("collect", new ItemStack(Material.CHEST_MINECART), "gui.player.collect", null, waiting > 0,
+                    e -> new CollectMenu(plugin, viewer, this).openLater(), "%amount%", String.valueOf(waiting));
         }
         if (editMode || plugin.canOpen(viewer, "topmenu")) {
             element("top", new ItemStack(Material.KNOWLEDGE_BOOK), "gui.settings.top", null, false,

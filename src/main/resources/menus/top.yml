@@ -26,9 +26,9 @@ elements:
     # list of players. name / lore placeholders: {position} {player} {invites}
     slots: "13,21-23,29-33,40"
     admin-only: false
-    name: "&e#{position} &f{player}"
+    name: "&#ff7a6b#{position} &f{player}"
     lore:
-      - "&7Invites: &e{invites}"
+      - "&7Invites: &#ff7a6b{invites}"
   back:
     slots: "49"
     admin-only: false

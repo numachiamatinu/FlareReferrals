@@ -17,27 +17,34 @@ general:
   players-only: "{prefix}&cOnly players can use this."
   # Answer for sub-commands that are turned off: looks like a command that doesn't exist.
   unknown-command: "{prefix}&cUnknown command. &7Use &f/{label} help"
+  database-error: "{prefix}&cThe referral data can't be saved right now. &7Try again in a moment."
 
 help:
-  # Only the commands a player can really use are shown.
+  # Only the commands a player can really use are shown. {label} = the command typed, {version} = plugin version
   header:
+    - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7v{version}"
     - ""
-    - " &e&lFLARE REFERRALS"
   lines:
-    refer: " &e/{label} <player> &7- enter who invited you to the server"
-    info: " &e/{label} info &7- your invites"
-    menu: " &e/{label} menu &7- rewards menu"
-    rewards: " &e/{label} rewards &7- inviter and welcome rewards"
-    top: " &e/{label} top &7- top inviters"
-    milestone: " &e/{label} milestone <n> &7- rewards of a milestone"
-    claim: " &e/{label} claim &7- collect reached milestones"
+    refer: " &#ff7a6b/{label} <player> &7- enter who invited you"
+    info: " &#ff7a6b/{label} info &7- your invites"
+    menu: " &#ff7a6b/{label} menu &7- rewards menu"
+    collect: " &#ff7a6b/{label} collect &7- rewards to collect"
+    rewards: " &#ff7a6b/{label} rewards &7- inviter and welcome rewards"
+    top: " &#ff7a6b/{label} top &7- top inviters"
+    milestone: " &#ff7a6b/{label} milestone <n> &7- rewards of a milestone"
+    version: " &#ff7a6b/{label} version &7- version and updates"
   footer: ""
+  # admins only (permission flarereferrals.admin)
   admin:
-    - " <click:run_command:'/{label} admin'><hover:show_text:'&7Click for details'>&e/{label} admin &7- edit invites of a player</hover></click>"
-    - " &e/{label} settings &7- admin menu"
-    - " &e/{label} layout &7- edit the menus"
-    - " &e/{label} reload &7- reload files"
-    - ""
+    - " <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites"
+    - " <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites"
+    - " <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites"
+    - " <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player"
+    - " <click:suggest_command:'/{label} admin resetclaimed '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin resetclaimed <player></hover></click> &7- forget received milestones"
+    - " &#ff7a6b/{label} settings &7- admin menu"
+    - " &#ff7a6b/{label} layout &7- edit the menus"
+    - " &#ff7a6b/{label} reload &7- reload the files"
+    - " <click:suggest_command:'/{label} migrate '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data"
 
 referral:
   disabled: "{prefix}&cReferrals are currently disabled."
@@ -47,17 +54,42 @@ referral:
   circular: "{prefix}&cYou invited &f{player} &cto the server, so they can't be the one who invited you."
   need-playtime: "{prefix}&cPlay at least &f{required} minutes &cbefore entering who invited you &7(you have {played})."
   same-ip: "{prefix}&cYou and &f{player} &cplay from the same network, so they can't be the one who invited you."
+  too-late: "{prefix}&cWho invited you can be entered only in your first &f{days} days &con the server."
+  pending: "{prefix}&f{player} &ais saved as the player who invited you. &7Play &f{minutes} more minutes &7and the invite counts: then you get your welcome reward."
+  verified: "{prefix}&aYour invite from &f{player} &anow counts. Enjoy your welcome reward!"
   success: "{prefix}&f{player} &ais now saved as the player who invited you. Enjoy your welcome reward!"
-  received: "{prefix}&f{player} &aentered you as the player who invited them! &7You now have &e{invites} &7invites."
-  broadcast: "{prefix}&f{player} &7was invited by &e{inviter}&7! &7({invites} invites)"
+  received: "{prefix}&f{player} &aentered you as the player who invited them! &7You now have &#ff7a6b{invites} &7invites."
+  broadcast: "{prefix}&f{player} &7was invited by &#ff7a6b{inviter}&7! &7({invites} invites)"
 
 milestone:
-  ready: "{prefix}&7Milestone &e{name} &7reached! <click:run_command:'/referrals claim {amount}'><hover:show_text:'&7Click to collect'>&e&n[Collect]</hover></click>"
-  remind: "{prefix}&7You have &e{amount} &7reward(s) to collect. <click:run_command:'/referrals claim'><hover:show_text:'&7Click to collect all'>&e&n[Collect]</hover></click>"
+  ready: "{prefix}&7Milestone &#ff7a6b{name} &7reached! <click:run_command:'/referrals claim {amount}'><hover:show_text:'&7Click to collect'>&#ff7a6b&n[Collect]</hover></click>"
+  remind: "{prefix}&7You have &#ff7a6b{amount} &7reward(s) to collect. <click:run_command:'/referrals claim'><hover:show_text:'&7Click to collect all'>&#ff7a6b&n[Collect]</hover></click>"
   nothing: "{prefix}&7Nothing to collect right now."
+  other-server: "{prefix}&7This reward can be collected on &f{servers}&7."
+  any-other-server: "another server"
+  # the reward can be collected only on this server, but this server has network.rewards-here: false
+  no-server: "no server"
 
 reward:
   pending: "{prefix}&aYou received &f{amount} &areward(s) earned while you were offline!"
+
+# Rewards waiting in /referrals collect. {reward} = name of the reward, {amount} = how many wait
+collect:
+  new: "{prefix}&7New reward to collect: &f{reward} <click:run_command:'/referrals collect'><hover:show_text:'&7Open the menu'>&a&n[Collect]</hover></click>"
+  remind: "{prefix}&7You have &#ff7a6b{amount} &7reward(s) to collect. <click:run_command:'/referrals collect'><hover:show_text:'&7Open the menu'>&a&n[Collect]</hover></click>"
+  # same, for players who can't open the menu (they collect with /referrals claim)
+  new-claim: "{prefix}&7New reward: &f{reward} <click:run_command:'/referrals claim'><hover:show_text:'&7Collect now'>&a&n[Collect]</hover></click>"
+  remind-claim: "{prefix}&7You have &#ff7a6b{amount} &7reward(s) to collect. <click:run_command:'/referrals claim'><hover:show_text:'&7Collect now'>&a&n[Collect]</hover></click>"
+  # the reward can be collected only on another server of the network
+  new-other: "{prefix}&7New reward: &f{reward}&7, collect it on &f{servers}&7."
+  several: "{amount} rewards"
+  title: "&aNew reward!"
+  subtitle: "&7{reward} &7- /referrals collect"
+  actionbar: "&a+ {reward} &7» /referrals collect"
+  nothing: "{prefix}&7Nothing to collect right now."
+  inventory-full: "{prefix}&cMake room in your inventory to collect &f{reward}&c. &7It stays in the menu."
+  inventory-full-some: "{prefix}&#ff7a6bSome rewards didn't fit in your inventory: &7they stay in the menu."
+  other-server: "{prefix}&7This reward can be collected on &f{servers}&7."
 
 # /referrals info
 # The line "{milestones}" is replaced with one "milestone-line" per milestone.
@@ -67,7 +99,7 @@ info:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>REFERRAL INFO</bold></gradient> &7- &f{player}"
     - ""
-    - " &7▪ &7Invites: &e{invites}"
+    - " &7▪ &7Invites: &#ff7a6b{invites}"
     - " &7▪ &7Invited by: &f{referrer}"
     - " &7▪ &7Next milestone: &f{next} &7(&7{remaining} left&7)"
     - ""
@@ -80,13 +112,13 @@ info:
   milestones-header-plain: " &7Milestones:"
   milestones-header-hover: "&7Open the menu"
   hover: "&7Click to see the rewards"
-  hover-claim: "&eClick to collect"
-  hover-admin: "&7Click to &eedit &7this milestone"
+  hover-claim: "&#ff7a6bClick to collect"
+  hover-admin: "&7Click to &#ff7a6bedit &7this milestone"
   status:
     claimed: "&a✔"
-    ready: "&e★"
+    ready: "&#ff7a6b★"
     locked: "&c✖"
-    repeat: "&e⟳"
+    repeat: "&#ff7a6b⟳"
     disabled: "&7⏸"
   nobody: "&7nobody"
   no-next: "&7none"
@@ -97,7 +129,7 @@ top:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>TOP INVITERS</bold></gradient>"
     - ""
-  line: " &e#{position} &f{player} &7- &7{invites} invites"
+  line: " &#ff7a6b#{position} &f{player} &7- &7{invites} invites"
   empty: " &7Nobody has invited anyone yet."
   footer: ""
 
@@ -109,9 +141,29 @@ admin:
   milestone-unknown: "{prefix}&cThere is no milestone for &f{amount} &cinvites."
   hold-item: "{prefix}&cHold an item in your main hand first."
   items-saved: "{prefix}&aSaved &f{amount} &aitem(s)."
-  invites-updated: "{prefix}&f{player}&a: &7{before} &7→ &e{invites} &ainvites."
+  invites-updated: "{prefix}&f{player}&a: &7{before} &7→ &#ff7a6b{invites} &ainvites."
   reset: "{prefix}&aReferral data of &f{player} &areset."
   reset-claimed: "{prefix}&aClaimed milestones of &f{player} &areset."
+  player-not-found: "{prefix}&f{player} &chas never joined the server."
+  restart-needed: "{prefix}&#ff7a6bStorage / network settings changed: &frestart the server &#ff7a6bto use them."
+  migrate:
+    started: "{prefix}&7Copying the data to &f{type}&7..."
+    same: "{prefix}&7This server already uses &f{type}&7."
+    running: "{prefix}&7A copy is already running, wait for it to finish."
+    not-empty: "{prefix}&c{type} already has &f{amount} &cplayers. &7To join them with the data of this server use &#ff7a6b{command}"
+    summary:
+      - "{prefix}&7Copy &f{players} &7players and &f{rewards} &7rewards to &f{type}&7."
+      - "&7The current data stays as a backup. Then restart the server."
+      - "<click:suggest_command:'{command}'><hover:show_text:'&7Click to write it'>&#ff7a6bType {command} &7to start</hover></click>"
+    summary-merge:
+      - "{prefix}&7Join &f{players} &7players of this server with the &f{amount} &7already in &f{type}&7."
+      - "&7Same player on both: invites added up, the first inviter entered is kept, rewards kept."
+      - "&cStop the other servers that use this database first, then start them again after the restart."
+      - "<click:suggest_command:'{command}'><hover:show_text:'&7Click to write it'>&#ff7a6bType {command} &7to start</hover></click>"
+    done: "{prefix}&aCopied &f{players} &aplayers and &f{rewards} &arewards to &f{type}&a."
+    merged: "{prefix}&aJoined: &f{added} &anew players, &f{joined} &aon both ({conflicts} with two inviters). &f{players} &aplayers in &f{type}&a."
+    failed: "{prefix}&cCopy to &f{type} &cfailed: &7{error}"
+    restart: "{prefix}&#ff7a6bRestart the server now. &7Until then referrals and rewards are paused, so nothing is lost."
   list-full: "{prefix}&cThis list is full (max {max} lines)."
   head-added: "{prefix}&aHead added."
   head-invalid: "{prefix}&f{input} &cis not a valid player name or head texture."
@@ -122,8 +174,8 @@ admin:
     - " &7• &7Drag buttons and glass to move them"
     - " &7• &7Put any item from your inventory (glass, heads...) as decoration"
     - " &7• &7Take an item out to remove it"
-    - " &7• &eShift + right-click &7an empty slot to add a button or glass"
-    - " &7• &eShift + right-click &7an item to make it &cadmin only &7(players won't see it)"
+    - " &7• &#ff7a6bShift + right-click &7an empty slot to add a button or glass"
+    - " &7• &#ff7a6bShift + right-click &7an item to make it &cadmin only &7(players won't see it)"
     - " &7• &7Close the menu to &asave"
     - ""
   layout-saved: "{prefix}&aLayout of &f{menu} &asaved."
@@ -136,41 +188,45 @@ admin:
 
 # Shown when a command is written incomplete or wrong. Lines are clickable: they fill the chat bar.
 usage:
-  milestone: "{prefix}&7Use &e/{label} milestone <amount>"
+  milestone: "{prefix}&7Use &#ff7a6b/{label} milestone <amount>"
+  migrate:
+    - "{prefix}&#ff7a6b/{label} migrate <yaml|sqlite|mysql> [merge]"
+    - "&7Copies all the data to another storage (set &fstorage.mysql &7in config.yml first)."
+    - "&7merge = join with the data already there (two servers going on one database)."
   admin:
-    unknown: "{prefix}&7Unknown action &e{action}"
-    missing-player: "{prefix}&7Missing the &eplayer"
-    missing-amount: "{prefix}&7Missing the &eamount"
+    unknown: "{prefix}&7Unknown action &#ff7a6b{action}"
+    missing-player: "{prefix}&7Missing the &#ff7a6bplayer"
+    missing-amount: "{prefix}&7Missing the &#ff7a6bamount"
     overview:
+      - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7admin"
       - ""
-      - " <click:suggest_command:'/{label} admin set <player> <n> '><hover:show_text:'&7Click to write it'>&e/{label} admin set <player> <n></hover></click> &7- set invites (no rewards)"
-      - " <click:suggest_command:'/{label} admin add <player> <n> '><hover:show_text:'&7Click to write it'>&e/{label} admin add <player> <n></hover></click> &7- add invites (gives rewards)"
-      - " <click:suggest_command:'/{label} admin remove <player> <n> '><hover:show_text:'&7Click to write it'>&e/{label} admin remove <player> <n></hover></click> &7- remove invites"
-      - " <click:suggest_command:'/{label} admin reset <player> '><hover:show_text:'&7Click to write it'>&e/{label} admin reset <player></hover></click> &7- reset the player"
-      - " <click:suggest_command:'/{label} admin resetclaimed <player> '><hover:show_text:'&7Click to write it'>&e/{label} admin resetclaimed <player></hover></click> &7- forget received milestones"
-      - ""
+      - " <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites (no rewards)"
+      - " <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites (gives rewards)"
+      - " <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites"
+      - " <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player"
+      - " <click:suggest_command:'/{label} admin resetclaimed '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin resetclaimed <player></hover></click> &7- forget received milestones"
     set:
-      - "{prefix}&e/{label} admin set <player> <n>"
-      - "&7Sets the exact invites, no rewards. Ex: &e/{label} admin set Steve 10"
+      - "{prefix}&#ff7a6b/{label} admin set <player> <n>"
+      - "&7Sets the exact invites, no rewards. Ex: &#ff7a6b/{label} admin set Steve 10"
     add:
-      - "{prefix}&e/{label} admin add <player> <n>"
-      - "&7Adds invites and gives the milestones reached. Ex: &e/{label} admin add Steve 3"
+      - "{prefix}&#ff7a6b/{label} admin add <player> <n>"
+      - "&7Adds invites and gives the milestones reached. Ex: &#ff7a6b/{label} admin add Steve 3"
     remove:
-      - "{prefix}&e/{label} admin remove <player> <n>"
-      - "&7Removes invites, rewards already given stay. Ex: &e/{label} admin remove Steve 2"
+      - "{prefix}&#ff7a6b/{label} admin remove <player> <n>"
+      - "&7Removes invites, rewards already given stay. Ex: &#ff7a6b/{label} admin remove Steve 2"
     reset:
-      - "{prefix}&e/{label} admin reset <player>"
-      - "&7Invites to 0, milestones and inviter forgotten. Ex: &e/{label} admin reset Steve"
+      - "{prefix}&#ff7a6b/{label} admin reset <player>"
+      - "&7Invites to 0, milestones and inviter forgotten. Ex: &#ff7a6b/{label} admin reset Steve"
     resetclaimed:
-      - "{prefix}&e/{label} admin resetclaimed <player>"
-      - "&7Milestones can be received again at the next invite. Ex: &e/{label} admin resetclaimed Steve"
+      - "{prefix}&#ff7a6b/{label} admin resetclaimed <player>"
+      - "&7Milestones can be received again at the next invite. Ex: &#ff7a6b/{label} admin resetclaimed Steve"
 
 # Chat prompts used by the menus. {cancel} = cancel word, {seconds} = time limit
 input:
   header:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>FLARE</bold></gradient> &7» &fType in chat"
-  suggestion: " &7» <hover:show_text:'&7Puts the current text in your chat bar'>&e&n[Click to edit the current text]</hover>"
+  suggestion: " &7» <hover:show_text:'&7Puts the current text in your chat bar'>&#ff7a6b&n[Click to edit the current text]</hover>"
   cancel-hint:
     - " &7» <click:run_command:'/referrals cancel'><hover:show_text:'&7Cancel and go back to the menu'>&c&n[Cancel]</hover></click> &7or type &7{cancel} &7· {seconds}s"
     - ""
@@ -179,6 +235,9 @@ input:
   nothing-to-cancel: "{prefix}&7There is nothing to cancel."
   not-a-number: "{prefix}&f{input} &cis not a valid number."
   playtime: " &7Minimum playtime in &fminutes &7(0 = off):"
+  max-days: " &7Days after the first join to enter the inviter &7(0 = no limit):"
+  verify-minutes: " &7Minutes the new player must play before the invite counts &7(0 = right away):"
+  servers: " &7Servers where this reward can be received, separated by commas &7(all = every server):"
   milestone-new: " &7How many &finvites &7for the new milestone? &7(e.g. 3, 5, 10)"
   milestone-amount: " &7New &famount of invites &7for this milestone:"
   milestone-name: " &7New &fname &7(colors, hex and gradients allowed):"
@@ -194,3 +253,21 @@ input:
   display-times: " &7Seconds for &ffade-in stay fade-out&7, separated by spaces &7(e.g. 0.5 3 1)"
   display-actionbar: " &7New &faction bar &7text (above the hotbar):"
   display-bossbar: " &7New &fboss bar &7text (top of the screen):"
+
+# /referrals version (or ver). {version} {minecraft} {software} {java} {storage} {network}
+version:
+  info:
+    - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7v{version}"
+    - ""
+    - " &7Minecraft: &f{minecraft} &8| &7Server: &f{software} &8| &7Java: &f{java}"
+    - " &7Storage: &f{storage}{network}"
+  # added to {network} when network mode is on
+  network: " &8| &7Network: &f{server}"
+  checking: " &7Checking for updates..."
+  latest: " &aYou are using the latest version."
+  update: " &#ff7a6bVersion &f{latest} &#ff7a6bis out! <click:open_url:'{url}'><hover:show_text:'&7Open the download page'>&#ff7a6b&n[Download]</hover></click>"
+  failed: " &7Could not check for updates right now, try again later."
+
+# New version message for admins when they join (update-check in config.yml). {version} {latest} {url}
+update:
+  join: "{prefix}&7FlareReferrals &f{latest} &7is out &8(you have {version})&7. <click:open_url:'{url}'><hover:show_text:'&7Open the download page'>&#ff7a6b&n[Download]</hover></click>"

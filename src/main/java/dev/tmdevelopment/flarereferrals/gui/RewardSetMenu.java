@@ -123,6 +123,7 @@ public final class RewardSetMenu extends Menu {
                 .glow(set.enabled()).hideFlags().build(), e -> {
             set.enabled(!set.enabled());
             save();
+            if (set.enabled()) plugin.referrals().rewardTurnedOn(set);
             refresh();
         });
 
@@ -190,7 +191,7 @@ public final class RewardSetMenu extends Menu {
                 refresh();
             });
             set(44, button(Material.BARRIER, "gui.rewardset.delete", "%amount%", String.valueOf(m.amount())),
-                    e -> new ConfirmMenu(plugin, viewer, Text.replace(lang().raw("gui.confirm.delete-milestone"), "%amount%", String.valueOf(m.amount())), () -> {
+                    e -> new ConfirmMenu(plugin, viewer, MilestoneListMenu.deleteQuestion(plugin, m.amount()), () -> {
                         plugin.rewards().delete(m.amount());
                         lang().send(viewer, "admin.milestone-deleted", "%amount%", String.valueOf(m.amount()));
                         (parent != null ? parent : new MilestoneListMenu(plugin, viewer, null)).openLater();
@@ -207,6 +208,25 @@ public final class RewardSetMenu extends Menu {
                 lang().raw("gui.rewardset.screen.bossbar-label") + " " + status(d.hasBossbar())), viewer));
         set(31, withPreview(new ItemStack(Material.ENDER_EYE), "gui.rewardset.screen", dsp),
                 e -> new DisplayMenu(plugin, viewer, set, this).openLater());
+
+        // where the reward goes: default (config.yml rewards.collect-menu) -> menu -> auto
+        String dl = set.delivery();
+        String effective = plugin.referrals().inMenu(set) ? lang().raw("gui.rewardset.delivery.menu") : lang().raw("gui.rewardset.delivery.auto");
+        set(30, button(Material.CHEST_MINECART, "gui.rewardset.delivery",
+                "%mode%", dl.equals("default") ? Text.replace(lang().raw("gui.rewardset.delivery.default"), "%mode%", effective) : effective), e -> {
+            set.delivery(dl.equals("default") ? "menu" : dl.equals("menu") ? "auto" : "default");
+            save();
+            refresh();
+        });
+
+        if (plugin.data().network()) {
+            set(32, button(Material.COMPASS, "gui.rewardset.servers", "%servers%", String.join(", ", set.servers())), e ->
+                    plugin.chatInput().ask(viewer, "input.servers", String.join(", ", set.servers()), text -> {
+                        set.servers(java.util.Arrays.asList(text.split("[,\\s]+")));
+                        save();
+                        open();
+                    }, this::open));
+        }
 
         set(36, button(Material.ENDER_EYE, "gui.rewardset.preview"),
                 e -> new PreviewMenu(plugin, viewer, set, this).openLater());

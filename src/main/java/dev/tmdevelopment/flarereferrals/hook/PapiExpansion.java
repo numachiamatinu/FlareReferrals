@@ -42,15 +42,37 @@ public final class PapiExpansion extends PlaceholderExpansion {
     @Override public @NotNull String getVersion() { return plugin.getDescription().getVersion(); }
     @Override public boolean persist() { return true; }
 
+    private volatile java.util.List<PlayerData> topCache = new java.util.ArrayList<>();
+    private volatile long topAt;
+
+    /** The top is sorted at most every 5 seconds, not for every placeholder. */
+    private java.util.List<PlayerData> top() {
+        long now = System.currentTimeMillis();
+        if (now - topAt > 5000) {
+            topCache = plugin.data().top(Integer.MAX_VALUE);
+            topAt = now;
+        }
+        return topCache;
+    }
+
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String params) {
-        String p = params.toLowerCase();
+        // scoreboard / TAB plugins can ask from their own threads: never throw at them
+        try {
+            return value(player, params);
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
+    private String value(OfflinePlayer player, String params) {
+        String p = params.toLowerCase(java.util.Locale.ROOT);
         if (p.startsWith("top_")) {
             String[] parts = p.split("_");
             if (parts.length != 3) return "";
             int pos;
             try { pos = Integer.parseInt(parts[1]); } catch (NumberFormatException e) { return ""; }
-            java.util.List<PlayerData> top = plugin.data().top(pos);
+            java.util.List<PlayerData> top = pos >= 1 ? top() : new java.util.ArrayList<PlayerData>();
             if (pos < 1 || pos > top.size()) return parts[2].equals("invites") ? "0" : "-";
             PlayerData d = top.get(pos - 1);
             return parts[2].equals("invites") ? String.valueOf(d.invites()) : d.name();
@@ -61,7 +83,11 @@ public final class PapiExpansion extends PlaceholderExpansion {
             case "invites":
                 return String.valueOf(d == null ? 0 : d.invites());
             case "referrer": {
-                if (d == null || d.referredBy() == null) return plugin.lang().raw("info.nobody");
+                if (d == null || d.referredBy() == null) {
+                    // colors as section codes, like every other placeholder plugin
+                    return dev.tmdevelopment.flarereferrals.util.Platform.legacy(
+                            dev.tmdevelopment.flarereferrals.util.Text.parse(plugin.lang().raw("info.nobody"), null));
+                }
                 PlayerData r = plugin.data().get(d.referredBy());
                 return r == null ? "?" : r.name();
             }
@@ -77,7 +103,7 @@ public final class PapiExpansion extends PlaceholderExpansion {
             case "claimable":
                 return String.valueOf(d == null ? 0 : d.claimable().size());
             case "claimed":
-                return String.valueOf(d == null ? 0 : d.claimed().size());
+                return String.valueOf(d == null ? 0 : d.claimedMilestones());
             default:
                 return null;
         }

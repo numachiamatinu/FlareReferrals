@@ -25,6 +25,7 @@ public final class ItemsMenu extends Menu {
     private final RewardSet set;
     private final Menu parent;
     private boolean saved = false;
+    private final List<ItemStack> before = new ArrayList<>();
 
     public ItemsMenu(FlareReferrals plugin, Player viewer, RewardSet set, Menu parent) {
         super(plugin, viewer);
@@ -42,8 +43,10 @@ public final class ItemsMenu extends Menu {
     @Override
     protected void build() {
         List<ItemStack> items = set.items();
+        before.clear();
         for (int i = 0; i < items.size() && i < STORAGE; i++) {
             getInventory().setItem(i, items.get(i).clone());
+            before.add(items.get(i).clone());
         }
         set(45, button(Material.BOOK, "gui.items.help"));
         set(47, button(Material.PLAYER_HEAD, "gui.items.add-head"), e -> {
@@ -124,6 +127,21 @@ public final class ItemsMenu extends Menu {
         set.items().clear();
         set.items().addAll(list);
         plugin.rewards().save();
+        // items the admin put in from his inventory: the reward keeps a copy, he gets his item back
+        List<ItemStack> old = new ArrayList<>(before);
+        List<ItemStack> added = new ArrayList<>();
+        for (ItemStack it : list) {
+            boolean found = false;
+            for (int i = 0; i < old.size(); i++) {
+                if (old.get(i).equals(it)) {
+                    old.remove(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) added.add(it);
+        }
+        giveBack(added);
         lang().send(viewer, "admin.items-saved", "%amount%", String.valueOf(list.size()));
     }
 }

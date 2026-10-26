@@ -68,7 +68,7 @@ public final class ItemBuilder {
     }
 
     public ItemBuilder skull(OfflinePlayer owner) {
-        if (meta instanceof SkullMeta) ((SkullMeta) meta).setOwningPlayer(owner);
+        if (meta instanceof SkullMeta && owner != null) Heads.setOwner((SkullMeta) meta, owner);
         return this;
     }
 

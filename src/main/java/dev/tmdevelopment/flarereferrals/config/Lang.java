@@ -50,7 +50,9 @@ public final class Lang {
                 YamlConfiguration defaults = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
                 cfg.setDefaults(defaults);
                 boolean changed = false;
-                // menu texts changed in a newer version: back up the file, then refresh menu + prompt texts
+                // menu texts changed in a newer version: back up the file, then refresh menu + prompt texts.
+                // This replaces edited texts too: changed default texts go in text-updates.yml instead.
+                // Test builds of 1.0.21 used 13-15, so a future bump must be 16 or higher.
                 int fileVersion = cfg.isSet("lang-version") ? cfg.getInt("lang-version") : 1;
                 int newVersion = defaults.getInt("lang-version");
                 if (fileVersion < newVersion) {
@@ -76,13 +78,13 @@ public final class Lang {
                     plugin.getLogger().info("Menu texts moved from lang/" + file.getName() + " to the files in menus/ (old file: " + backup.getName() + ").");
                 }
                 // old default messages -> new ones (edited messages are kept)
-                if (dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, cfg, defaults, "lang/en.yml")) changed = true;
                 if (dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(cfg)) changed = true;
+                if (dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, cfg, defaults, "lang/en.yml")) changed = true;
                 // write messages added by newer versions into the file, keeping the edited ones
                 for (String key : defaults.getKeys(true)) {
                     if (defaults.isConfigurationSection(key)) continue;
                     if (!cfg.isSet(key)) {
-                        cfg.set(key, defaults.get(key));
+                        dev.tmdevelopment.flarereferrals.util.Comments.add(cfg, defaults, key);
                         changed = true;
                     }
                 }

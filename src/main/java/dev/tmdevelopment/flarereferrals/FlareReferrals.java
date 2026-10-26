@@ -30,6 +30,7 @@ public final class FlareReferrals extends JavaPlugin {
     private ReferralService referrals;
     private ChatInput chatInput;
     private TMDStats stats;
+    private dev.tmdevelopment.flarereferrals.update.UpdateChecker updates;
 
     /** Before the rename the plugin was called FlaresRewards: its folder is copied once, nothing is lost. */
     @Override
@@ -56,8 +57,34 @@ public final class FlareReferrals extends JavaPlugin {
         }
     }
 
+    private boolean unsupported;
+
+    /** 1.16.5 or newer (older servers still load the plugin: api-version is not checked there). */
+    private static boolean supportedServer() {
+        String v = Bukkit.getBukkitVersion(); // 1.8.8-R0.1-SNAPSHOT, 1.21.4-R0.1-SNAPSHOT, 26.3.build.223-...
+        String[] p = v.split("[^0-9]+");
+        try {
+            int major = Integer.parseInt(p[0]);
+            if (major != 1) return true; // 26.x and later
+            int minor = p.length > 1 ? Integer.parseInt(p[1]) : 0;
+            int patch = p.length > 2 && v.startsWith("1." + minor + ".") ? Integer.parseInt(p[2]) : 0;
+            return minor > 16 || (minor == 16 && patch >= 5);
+        } catch (RuntimeException e) {
+            return true;
+        }
+    }
+
     @Override
     public void onEnable() {
+        if (!supportedServer()) {
+            unsupported = true;
+            String mc = Bukkit.getBukkitVersion();
+            if (mc.indexOf('-') > 0) mc = mc.substring(0, mc.indexOf('-'));
+            getLogger().severe("FlareReferrals needs Minecraft 1.16.5 or newer, this server is " + mc
+                    + ": the plugin is turned off. (Players on older clients can join a 1.16.5+ server with ViaVersion.)");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
         if (Bukkit.getPluginManager().getPlugin("FlaresRewards") != null) {
             getLogger().severe("The old FlaresRewards jar is also installed: remove it from plugins/ and restart, "
                     + "FlareReferrals replaces it (same commands, data already copied).");
@@ -76,6 +103,7 @@ public final class FlareReferrals extends JavaPlugin {
         currencies.load();
         rewards = new RewardManager(this);
         rewards.load();
+        finishMigration();
         layouts = new dev.tmdevelopment.flarereferrals.layout.LayoutManager(this);
         layouts.load();
         menuTexts = new dev.tmdevelopment.flarereferrals.config.MenuTexts(this);
@@ -83,15 +111,20 @@ public final class FlareReferrals extends JavaPlugin {
         menuCommands = new dev.tmdevelopment.flarereferrals.layout.MenuCommands(this);
         menuCommands.refresh();
         data = new DataManager(this);
-        data.load();
+        if (!data.start()) {
+            data = null;
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
         referrals = new ReferralService(this);
+        referrals.checkServers();
         chatInput = new ChatInput(this);
 
         Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
         Bukkit.getPluginManager().registerEvents(chatInput, this);
 
-        // /referrals, also /freferrals /fref /freferral (plugin.yml aliases, useful if another plugin uses /referrals)
+        // /referrals, also /freferrals /fref /freferral /referral (plugin.yml aliases, useful if another plugin uses /referrals)
         PluginCommand cmd = getCommand("referrals");
         if (cmd != null) {
             ReferralCommand executor = new ReferralCommand(this);
@@ -114,16 +147,25 @@ public final class FlareReferrals extends JavaPlugin {
         // check currencies once every plugin is loaded
         Bukkit.getScheduler().runTaskLater(this, () -> currencies.checkAll(), 40L);
 
-        // autosave every 5 minutes
+        // autosave every 5 minutes (data.yml; databases save at every change)
         Bukkit.getScheduler().runTaskTimer(this, () -> data.save(), 6000L, 6000L);
+        // network playtime + invites waiting for referral.verify-after-minutes
+        Bukkit.getScheduler().runTaskTimer(this, () -> referrals.minute(), 1200L, 1200L);
+        for (Player p : Bukkit.getOnlinePlayers()) referrals.join(p); // /reload or plugin managers
 
         startMetrics();
         banner(papi, System.currentTimeMillis() - start);
+
+        // update check: GitHub releases, in the background (update-check: false = off)
+        updates = new dev.tmdevelopment.flarereferrals.update.UpdateChecker(this);
+        updates.startup();
     }
 
     @Override
     public void onDisable() {
+        if (unsupported) return;
         if (stats != null) stats.shutdown();
+        dev.tmdevelopment.flarereferrals.service.ScreenEffects.clear();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (dev.tmdevelopment.flarereferrals.util.Compat.topHolder(p) instanceof dev.tmdevelopment.flarereferrals.gui.Menu) {
                 p.closeInventory();
@@ -132,7 +174,7 @@ public final class FlareReferrals extends JavaPlugin {
         if (menuCommands != null) {
             try { menuCommands.unregisterAll(); } catch (Throwable ignored) {}
         }
-        if (data != null) data.saveSync();
+        if (data != null) data.stop();
     }
 
     /**
@@ -140,18 +182,43 @@ public final class FlareReferrals extends JavaPlugin {
      * Lists of user-defined entries (currencies, auto-install plugins) are only created when missing entirely,
      * so entries the owner removed are not added back.
      */
+    private boolean keepReferralRewardsAuto;
+
+    /** After rewards.yml is loaded: finishes the claim-in-menu -> collect-menu change. */
+    private void finishMigration() {
+        if (!keepReferralRewardsAuto || rewards == null) return;
+        keepReferralRewardsAuto = false;
+        if (rewards.inviter().delivery().equals("default")) rewards.inviter().delivery("auto");
+        if (rewards.invited().delivery().equals("default")) rewards.invited().delivery("auto");
+        rewards.save();
+    }
+
     private void updateConfig() {
         org.bukkit.configuration.file.FileConfiguration cfg = getConfig();
         org.bukkit.configuration.Configuration defaults = cfg.getDefaults();
         if (defaults == null) return;
         boolean changed = false;
+        // 1.0.21: milestones.claim-in-menu became rewards.collect-menu (for every reward)
+        if (cfg.isSet("milestones.claim-in-menu")) {
+            boolean old = cfg.getBoolean("milestones.claim-in-menu");
+            if (!cfg.isSet("rewards.collect-menu")) {
+                boolean newSection = !cfg.isSet("rewards");
+                cfg.set("rewards.collect-menu", old);
+                if (newSection) dev.tmdevelopment.flarereferrals.util.Comments.copy(cfg, defaults, "rewards");
+                dev.tmdevelopment.flarereferrals.util.Comments.copy(cfg, defaults, "rewards.collect-menu");
+                // before, only milestones waited in the menu: inviter and welcome rewards stay "right away"
+                if (old) keepReferralRewardsAuto = true;
+            }
+            cfg.set("milestones.claim-in-menu", null);
+            changed = true;
+        }
         for (String key : defaults.getKeys(true)) {
             if (defaults.isConfigurationSection(key)) continue;
             String userList = key.startsWith("currencies.") ? "currencies"
                     : key.startsWith("auto-install.plugins.") ? "auto-install.plugins" : null;
             if (userList != null && cfg.isSet(userList)) continue;
             if (!cfg.isSet(key)) {
-                cfg.set(key, defaults.get(key));
+                dev.tmdevelopment.flarereferrals.util.Comments.add(cfg, defaults, key);
                 changed = true;
             }
         }
@@ -167,7 +234,7 @@ public final class FlareReferrals extends JavaPlugin {
      */
     public boolean canOpen(org.bukkit.command.CommandSender s, String key) {
         // a menu turned off in menus/<menu>.yml (enabled: false) is off for everyone
-        String layout = ("menu".equals(key) ? "main" : "rewards".equals(key) ? "rewards" : "preview".equals(key) ? "preview" : "topmenu".equals(key) ? "top" : null);
+        String layout = ("menu".equals(key) ? "main" : "rewards".equals(key) ? "rewards" : "preview".equals(key) ? "preview" : "topmenu".equals(key) ? "top" : "collect".equals(key) ? "collect" : null);
         if (layout != null && layouts != null && !layouts.get(layout).enabled()) return false;
         if (key.equals("topmenu")) key = "top";
         if (dev.tmdevelopment.flarereferrals.util.Perms.has(s, "admin")) return true;
@@ -179,24 +246,65 @@ public final class FlareReferrals extends JavaPlugin {
         return canOpen(s, key);
     }
 
-    public void reloadAll() {
+    /** @return true when storage / network settings changed: they need a restart. */
+    public boolean reloadAll() {
+        String before = storageSettings();
         dev.tmdevelopment.flarereferrals.util.Headers.sync(this, new java.io.File(getDataFolder(), "config.yml"), "config.yml");
         reloadConfig();
+        updateConfig();
         lang.load();
         currencies.load();
         currencies.checkAll();
+        java.util.Set<String> offBefore = offRewards();
         rewards.load();
+        finishMigration();
+        referrals.checkServers();
+        // rewards turned on in rewards.yml: what waited while they were off is given now
+        for (dev.tmdevelopment.flarereferrals.reward.RewardSet set : allRewards()) {
+            if (set.enabled() && offBefore.contains(set.id())) referrals.rewardTurnedOn(set);
+        }
         layouts.load();
         menuTexts.load();
         menuCommands.refresh();
+        boolean restart = !before.equals(storageSettings());
+        if (restart) getLogger().warning("Storage / network settings changed: restart the server to use them.");
+        return restart;
+    }
+
+    private java.util.List<dev.tmdevelopment.flarereferrals.reward.RewardSet> allRewards() {
+        java.util.List<dev.tmdevelopment.flarereferrals.reward.RewardSet> all = new java.util.ArrayList<>();
+        all.add(rewards.inviter());
+        all.add(rewards.invited());
+        all.addAll(rewards.milestoneList());
+        return all;
+    }
+
+    private java.util.Set<String> offRewards() {
+        java.util.Set<String> off = new java.util.HashSet<>();
+        for (dev.tmdevelopment.flarereferrals.reward.RewardSet set : allRewards()) if (!set.enabled()) off.add(set.id());
+        return off;
+    }
+
+    private String storageSettings() {
+        org.bukkit.configuration.file.FileConfiguration c = getConfig();
+        StringBuilder sb = new StringBuilder();
+        for (String k : new String[]{"storage.type", "storage.mysql.host", "storage.mysql.port", "storage.mysql.database",
+                "storage.mysql.username", "storage.mysql.password", "storage.mysql.properties", "storage.mysql.table-prefix",
+                "network.enabled", "network.server-name"}) {
+            sb.append(c.getString(k, "")).append('|');
+        }
+        return sb.toString();
     }
 
     /** Anonymous usage statistics (TMDStats). Server owners can turn them off in plugins/TMDStats/config.yml. */
     private void startMetrics() {
         try {
-            stats = new TMDStats(this, "flarereferrals");
+            stats = new TMDStats(this, "flarereferrals", getConfig().getBoolean("stats", true));
             stats.addValue("milestone_mode", () -> referrals.claimMode() ? "Collect in menu" : "Automatic");
+            stats.addValue("collect_menu", () -> getConfig().getBoolean("rewards.collect-menu", true) ? "On" : "Off");
             stats.addValue("milestones", () -> rewards.milestones().size());
+            stats.addValue("storage", () -> data.type());
+            stats.addValue("network", () -> data.network() ? "Network" : "Single server");
         } catch (Throwable t) {
             getLogger().fine("TMDStats not started: " + t.getMessage());
         }
@@ -218,6 +326,8 @@ public final class FlareReferrals extends JavaPlugin {
                 "<gray>  Milestones: <white>" + rewards.milestones().size()
                         + " <dark_gray>| <gray>Currencies: <white>" + currencies.all().size()
                         + " <dark_gray>| <gray>Players: <white>" + data.size(),
+                "<gray>  Storage: <white>" + data.type() + (data.network()
+                        ? " <dark_gray>| <gray>Network: <green>on <gray>as <white>" + data.server() : ""),
                 "<gray>  PlaceholderAPI: " + (papi ? "<green>hooked" : "<red>not found")
                         + " <dark_gray>| <gray>Vault: " + (vault ? "<green>found" : "<red>not found"),
                 "<gray>  Enabled in <white>" + ms + "ms",
@@ -237,4 +347,19 @@ public final class FlareReferrals extends JavaPlugin {
     public DataManager data() { return data; }
     public ReferralService referrals() { return referrals; }
     public ChatInput chatInput() { return chatInput; }
+    public dev.tmdevelopment.flarereferrals.update.UpdateChecker updates() { return updates; }
+
+    /** Admins who join hear about a new version (clickable), a few seconds after joining. */
+    public void updateNotice(Player p) {
+        if (updates == null || !updates.enabled() || !dev.tmdevelopment.flarereferrals.util.Perms.has(p, "admin")) return;
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (!p.isOnline()) return;
+            updates.check(() -> {
+                if (p.isOnline() && updates.result() == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.UPDATE) {
+                    lang.send(p, "update.join", "%version%", updates.current(), "%latest%", updates.latest(),
+                            "%url%", updates.downloadUrl());
+                }
+            });
+        }, 80L);
+    }
 }

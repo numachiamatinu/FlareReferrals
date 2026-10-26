@@ -30,7 +30,7 @@ elements:
     lore:
       - "&7Invited by a friend? Write"
       - "&f/referrals <his name>&7:"
-      - "&7 • &ethe inviter &7gets the left reward"
+      - "&7 • &#ff7a6bthe inviter &7gets the left reward"
       - "&7 • &athe new player &7gets the right reward"
       - ""
       - "&7Milestone rewards are separate."
@@ -39,7 +39,7 @@ elements:
     slots: "20"
     admin-only: false
     material: "PLAYER_HEAD"
-    name: "&eInviter reward"
+    name: "&#ff7a6bInviter reward"
     lore:
       - "&7Given every time a new player"
       - "&7enters you as who invited him."
@@ -50,11 +50,11 @@ elements:
     slots: "22"
     admin-only: false
     material: "NETHER_STAR"
-    name: "&6Milestones"
+    name: "&#ff7a6bMilestones"
     lore:
       - "&7Extra rewards at 3 / 5 / 10 invites."
       - ""
-      - "&eClick to open"
+      - "&#ff7a6bClick to open"
   invited:
     # placeholders: {status}. The reward list is added under the lore automatically
     slots: "24"
@@ -87,8 +87,8 @@ decorations:
 texts:
   click-admin:
   - ""
-  - "&eLeft-click &7edit"
-  - "&eRight-click &7turn on/off"
+  - "&#ff7a6bLeft-click &7edit"
+  - "&#ff7a6bRight-click &7turn on/off"
   click-player:
   - ""
-  - "&eClick &7to see the items"
+  - "&#ff7a6bClick &7to see the items"

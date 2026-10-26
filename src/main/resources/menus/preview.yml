@@ -31,7 +31,7 @@ elements:
     slots: "53"
     admin-only: true
     material: "ANVIL"
-    name: "&eEdit"
+    name: "&#ff7a6bEdit"
     lore:
       - "&7Admin: edit this milestone"
   back:

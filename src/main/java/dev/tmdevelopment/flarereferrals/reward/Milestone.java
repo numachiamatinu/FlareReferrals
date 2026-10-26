@@ -14,7 +14,7 @@ public final class Milestone extends RewardSet {
     public Milestone(int amount) {
         super("milestone:" + amount);
         this.amount = amount;
-        this.name = "&e" + amount + " Invites";
+        this.name = "&#ff7a6b" + amount + " Invites";
         this.icon = new ItemStack(Material.CHEST);
     }
 

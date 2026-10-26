@@ -56,7 +56,8 @@ public final class CurrencyManager {
     public String display(String id, double amount) {
         Currency c = get(id);
         String amt = Text.formatAmount(amount);
-        return c == null ? amt + " " + id : Text.replace(c.display(), "%amount%", amt);
+        // a currency turned off is shown only in the admin menus, marked as off
+        return c == null ? "&7" + amt + " " + id + " &c(off)" : Text.replace(c.display(), "%amount%", amt);
     }
 
     private final java.util.Set<String> warned = new java.util.HashSet<>();

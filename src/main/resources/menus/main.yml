@@ -29,7 +29,7 @@ elements:
     material: "head:{player}"
     name: "&f{player}"
     lore:
-      - "&7Invites: &e{invites}"
+      - "&7Invites: &#ff7a6b{invites}"
       - "&7Invited by: &f{referrer}"
       - "&7Next milestone: &f{next}"
   milestones:
@@ -40,12 +40,12 @@ elements:
     slots: "47"
     admin-only: false
     material: "EMERALD"
-    name: "&eReferral rewards"
+    name: "&#ff7a6bReferral rewards"
     lore:
       - "&7What you get for inviting players"
       - "&7and what new players get."
       - ""
-      - "&eClick to open"
+      - "&#ff7a6bClick to open"
   close:
     slots: "49"
     admin-only: false
@@ -58,7 +58,17 @@ elements:
     material: "KNOWLEDGE_BOOK"
     name: "&bTop inviters"
     lore:
-      - "&eClick to open"
+      - "&#ff7a6bClick to open"
+  collect:
+    # rewards waiting to be collected. placeholder: {amount}
+    slots: "45"
+    admin-only: false
+    material: "CHEST_MINECART"
+    name: "&aRewards to collect"
+    lore:
+      - "&7Waiting: &#ff7a6b{amount}"
+      - ""
+      - "&#ff7a6bClick to open"
   settings:
     # only admins see it
     slots: "53"
@@ -68,7 +78,7 @@ elements:
     lore:
       - "&7Open /referrals settings"
 decorations:
-  - slots: "0-3,5-8,9,17,18,26,27,35,36,44,45,46,48,50,52"
+  - slots: "0-3,5-8,9,17,18,26,27,35,36,44,46,48,50,52"
     material: "GRAY_STAINED_GLASS_PANE"
     name: " "
     lore: []
@@ -78,24 +88,30 @@ decorations:
 
 # ── Texts of this menu ──
 # milestone.* = lines added to each milestone (ready / locked / claimed ...)
+# elsewhere = ready, but it can be collected only on another server of the network
+# next-invite = reached, but not received yet (after admin set / resetclaimed): it comes with the next invite
 texts:
   milestone:
     ready:
-    - "&e★ Ready to collect!"
+    - "&#ff7a6b★ Ready to collect!"
     claim-click:
     - ""
-    - "&eClick to collect"
+    - "&#ff7a6bClick to collect"
     claimed:
     - "&a✔ Claimed"
+    elsewhere:
+    - "&7Collect it on &f{servers}"
+    next-invite:
+    - "&#ff7a6b◷ &7Reached: given at the next invite"
     locked:
-    - "&7Progress: &e{invites}&7/&e{target}"
+    - "&7Progress: &#ff7a6b{invites}&7/&#ff7a6b{target}"
     - "&7Missing: &f{remaining}"
     repeat:
-    - "&e⟳ Every {amount} invites"
-    - "&7Next at &e{target} &7({remaining} left)"
+    - "&#ff7a6b⟳ Every {amount} invites"
+    - "&7Next at &#ff7a6b{target} &7({remaining} left)"
     click:
     - ""
-    - "&eClick &7to see the rewards"
+    - "&#ff7a6bClick &7to see the rewards"
     admin:
     - "&cShift-click &7to edit"
   no-milestones:

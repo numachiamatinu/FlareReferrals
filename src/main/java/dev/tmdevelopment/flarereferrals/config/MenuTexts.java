@@ -38,13 +38,13 @@ public final class MenuTexts {
         YamlConfiguration def = jar("menus/admin.yml");
         if (def == null) return;
         // old default texts -> new ones (edited texts are kept)
-        boolean changed = dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, admin, def, "menus/admin.yml");
-        changed |= dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(admin);
+        boolean changed = dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(admin);
+        changed |= dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, admin, def, "menus/admin.yml");
         admin.setDefaults(def);
         // texts added by newer versions are written into the file, edited ones are kept
         for (String key : def.getKeys(true)) {
             if (def.isConfigurationSection(key) || admin.isSet(key)) continue;
-            admin.set(key, def.get(key));
+            dev.tmdevelopment.flarereferrals.util.Comments.add(admin, def, key);
             changed = true;
         }
         if (changed) {
@@ -62,7 +62,7 @@ public final class MenuTexts {
         int dot = rest.indexOf('.');
         String first = dot < 0 ? rest : rest.substring(0, dot);
         String tail = dot < 0 ? "" : rest.substring(dot + 1);
-        String menu = ("player".equals(first) ? "main" : "referral-rewards".equals(first) ? "rewards" : "top".equals(first) ? "top" : "preview".equals(first) ? "preview" : null);
+        String menu = ("player".equals(first) ? "main" : "referral-rewards".equals(first) ? "rewards" : "top".equals(first) ? "top" : "preview".equals(first) ? "preview" : "collect".equals(first) ? "collect" : null);
         if (menu != null && !tail.isEmpty()) {
             if (tail.equals("title")) {
                 // the title is the "title" option of the menu file; empty = original title

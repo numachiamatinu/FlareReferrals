@@ -1,5 +1,7 @@
 package dev.tmdevelopment.flarereferrals.gui;
 
+import dev.tmdevelopment.flarereferrals.util.Text;
+
 import dev.tmdevelopment.flarereferrals.FlareReferrals;
 import dev.tmdevelopment.flarereferrals.util.ItemBuilder;
 import net.kyori.adventure.text.Component;
@@ -38,7 +40,7 @@ public final class SettingsMenu extends Menu {
             new Toggle(15, "rewards.offline-queue", "offline-queue", Material.ENDER_CHEST),
             new Toggle(16, "rewards.drop-if-full", "drop-if-full", Material.HOPPER),
             new Toggle(20, "sounds.enabled", "sounds", Material.NOTE_BLOCK),
-            new Toggle(22, "milestones.claim-in-menu", "claim-in-menu", Material.CHEST_MINECART),
+            new Toggle(22, "rewards.collect-menu", "collect-menu", Material.CHEST_MINECART),
     };
 
     public SettingsMenu(FlareReferrals plugin, Player viewer) {
@@ -84,6 +86,25 @@ public final class SettingsMenu extends Menu {
             refresh();
         });
 
+        number(23, Material.MAP, "referral.max-days-after-first-join", "gui.settings.max-days", "input.max-days", 1);
+        number(24, Material.LANTERN, "referral.verify-after-minutes", "gui.settings.verify", "input.verify-minutes", 5);
+
+        // storage / network: read-only here (changing it moves data: /referrals migrate), rewards on this server on/off
+        if (plugin.data().network()) {
+            boolean here = cfg.getBoolean("network.rewards-here", true);
+            set(41, new ItemBuilder(Material.ENDER_PEARL)
+                    .name(lang().item("gui.settings.storage-network.name", viewer))
+                    .lore(lang().lore("gui.settings.storage-network.lore", viewer, "%storage%", plugin.data().type(),
+                            "%server%", plugin.data().server(), "%rewards%", status(here)))
+                    .glow(here).hideFlags().build(), e -> {
+                cfg.set("network.rewards-here", !here);
+                plugin.saveConfig();
+                refresh();
+            });
+        } else {
+            set(41, button(Material.ENDER_PEARL, "gui.settings.storage", "%storage%", plugin.data().type()));
+        }
+
         set(30, button(Material.PLAYER_HEAD, "gui.settings.referral-rewards",
                         "%inviter%", status(plugin.rewards().inviter().enabled()),
                         "%invited%", status(plugin.rewards().invited().enabled())),
@@ -101,11 +122,39 @@ public final class SettingsMenu extends Menu {
         set(40, button(Material.KNOWLEDGE_BOOK, "gui.settings.top"), e -> new TopMenu(plugin, viewer, this).openLater());
 
         set(48, button(Material.LIME_DYE, "gui.settings.reload"), e -> {
-            plugin.reloadAll();
+            boolean restart = plugin.reloadAll();
             lang().send(viewer, "admin.reloaded");
+            if (restart) lang().send(viewer, "admin.restart-needed");
             openLater();
         });
         backButton(49, null);
         fillBorder();
+    }
+
+    /** Number option: left +step, right -step, shift = type it. 0 = off. */
+    private void number(int slot, Material icon, String key, String text, String prompt, int step) {
+        org.bukkit.configuration.file.FileConfiguration cfg = plugin.getConfig();
+        int value = cfg.getInt(key, 0);
+        set(slot, new ItemBuilder(icon)
+                .name(lang().item(text + ".name", viewer))
+                .lore(lang().lore(text + ".lore", viewer, "%current%", value <= 0 ? lang().raw(text + ".current-off")
+                        : Text.replace(lang().raw(text + ".current"), "%value%", String.valueOf(value)), "%value%", String.valueOf(value)))
+                .glow(value > 0).hideFlags().build(), e -> {
+            if (e.isShiftClick()) {
+                plugin.chatInput().ask(viewer, prompt, String.valueOf(value), t -> {
+                    try {
+                        cfg.set(key, Math.max(0, Integer.parseInt(t.trim())));
+                        plugin.saveConfig();
+                    } catch (NumberFormatException ex) {
+                        lang().send(viewer, "input.not-a-number", "%input%", t);
+                    }
+                    open();
+                }, this::open);
+                return;
+            }
+            cfg.set(key, Math.max(0, value + (e.isLeftClick() ? step : -step)));
+            plugin.saveConfig();
+            refresh();
+        });
     }
 }

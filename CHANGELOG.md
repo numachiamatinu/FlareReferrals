@@ -2,6 +2,58 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.0.21
+- Collect menu: rewards (inviter, welcome, milestones) wait in `/referrals collect` until the player takes them,
+  with a clickable notification (chat, action bar, title, sound) and a reminder every few minutes. Preview of
+  what each reward gives, "Collect all", rewards that don't fit in the inventory stay in the menu.
+  On by default (`rewards.collect-menu`), each reward can be "collect menu" or "right away" (`delivery`).
+- Storage: data.yml (default), SQLite or MySQL / MariaDB. `/referrals migrate <yaml|sqlite|mysql>` copies all the data
+  (shows a summary first, keeps the old data as a backup, sets storage.type for you).
+- Network mode (off by default): lobby, Skyblock, Survival... share invites, inviters and the top through MySQL.
+  The inviter is found on every server, playtime is counted on the whole network, messages reach the player on
+  the server he is on. Every reward can be limited with `servers` in rewards.yml (also in the reward menu).
+  `rewards-here: false` for a lobby that only saves invites. `migrate mysql merge` joins two servers' data.
+- Every reward is saved as its own entry: it can't be given twice, not even by two servers at the same time,
+  and a reward interrupted by a crash is listed in the console.
+- New anti-abuse options (off by default, also in /referrals settings): time limit after the first join to enter
+  the inviter, invite that counts only after X minutes of play.
+- `stats: false` in config.yml turns off the anonymous statistics of this plugin only.
+- `/referrals version` (or `ver`, also from the console): plugin version, Minecraft / server / Java version,
+  storage, and whether a new version is out with a download link. Admins get a clickable message when they join.
+  It reads the public GitHub releases (betas only for beta users), at most every 6 hours, nothing is sent.
+  Turn it off with `update-check: false`. Permission `flarereferrals.command.version` (included in `flarereferrals.admin`).
+- Cleaner `/referrals help`: title with the version, short lines, the admin commands listed one by one.
+- New alias `/referral`.
+- FlareReferrals keeps its own color everywhere: coral (`#FF5F6D` → `#FFC371`), and the yellow highlights in
+  messages, help and menus are now coral too (`#FF7A6B`). Texts you never edited are updated by themselves,
+  edited ones are not touched.
+- Fixed: placeholders asked by scoreboard / TAB plugins from their own threads could fail, `top_0` or
+  negative positions gave an error, boss bars of rewards stayed on screen after `/reload`.
+- Rewards that are turned off now wait (they are given when turned on again) instead of being skipped, also for
+  invites made while they are off.
+- Updating keeps the help, info and command texts you edited (only the texts you never changed are updated).
+- Fixed: in the admin menus Q, number keys, F, middle and double click also confirmed or toggled things (for
+  example deleting a milestone): every menu now reacts only to left / right clicks, with or without shift.
+- Fixed: "block same IP" could be skipped by an inviter who joined while the option was off. Only a short hash of
+  the IP is kept, as before.
+- On servers older than 1.16.5 the plugin turns itself off with a clear message instead of an error.
+- Items you put in the reward editor or the menu editor stay in your inventory too.
+- rewards.yml keeps plain items short ("DIAMOND:2") and its explanations when it is saved from the editor.
+- Deleting a milestone tells you how many players haven't received it yet (they get it back if you make it again).
+- Turned-off currencies are no longer shown to players; no reminder right after a "new reward" message;
+  player heads don't ask Mojang on offline-mode servers; "1 invite" / "1 day" / "1 minute" instead of "1 invites";
+  clearer texts.
+- The rewards menu shows "Claimed" only for milestones the player really received; after `admin set` or
+  `admin resetclaimed` it says the milestone comes with the next invite. `resetclaimed` is in the help.
+- Network: a milestone that can be collected only on another server says where in the rewards menu too; a reward
+  nobody can collect (only this server in `servers`, but `rewards-here: false`) is reported in the console.
+- New options added to config.yml and to the language / menu files keep their explanations (Minecraft 1.18.1+).
+- Milestones converted from 1.0.20 no longer show "Since: 01/01/1970".
+- Coming from 1.0.20, the inviter and welcome rewards stay "right away" like before: only milestones wait in the
+  collect menu. Every reward can be changed in its menu.
+- data.yml is converted to the new format by itself (a copy of the old file goes in backups/). A broken data.yml
+  now stops the plugin instead of being replaced by an empty one.
+
 ## 1.0.20
 - Statistics (TMDStats) are now sent to tmstudio.dev, the new TMDevelopment site. The old address no longer exists.
 

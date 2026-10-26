@@ -20,14 +20,14 @@ common:
     name: "&cClose"
     lore: []
 names:
-  inviter: "&eInviter reward"
+  inviter: "&#ff7a6bInviter reward"
   invited: "&aInvited reward"
 settings:
   title: "<gradient:#ff5f6d:#ffc371>Flare Referrals</gradient> &7- Settings"
   toggle-lore:
   - ""
   - "&7Status: {status}"
-  - "&eClick to toggle"
+  - "&#ff7a6bClick to toggle"
   options:
     referral-enabled:
       name: "&fReferral command"
@@ -62,12 +62,13 @@ settings:
       lore:
       - "&7Drop items on the ground if"
       - "&7the inventory is full."
-    claim-in-menu:
-      name: "&fCollect milestones"
+    collect-menu:
+      name: "&fCollect menu"
       lore:
-      - "&7On: players collect reached milestones"
-      - "&7by clicking them in the menu."
-      - "&7Off: given automatically."
+      - "&7On: rewards wait in &f/referrals collect"
+      - "&7and players get a notification."
+      - "&7Off: given right away."
+      - "&7Each reward can change it in its menu."
     sounds:
       name: "&fSounds"
       lore:
@@ -78,27 +79,70 @@ settings:
     - "&7Playtime a player needs before"
     - "&7entering who invited them."
     - ""
-    - "&7Current: &e{value} minutes"
+    - "&7Current: &#ff7a6b{value} minutes"
     - ""
-    - "&eLeft-click &7+5  &eRight-click &7-5"
-    - "&eShift-click &7type a value"
+    - "&#ff7a6bLeft-click &7+5  &#ff7a6bRight-click &7-5"
+    - "&#ff7a6bShift-click &7type a value"
+  max-days:
+    name: "&fTime to enter the inviter"
+    lore:
+    - "&7Days after the first join in which"
+    - "&7a player can enter who invited him."
+    - ""
+    - "&7Current: {current}"
+    - ""
+    - "&#ff7a6bLeft-click &7+1  &#ff7a6bRight-click &7-1"
+    - "&#ff7a6bShift-click &7type a value (0 = off)"
+    current: "&#ff7a6b{value} &7days"
+    current-off: "&cOff"
+  verify:
+    name: "&fInvite counts after playing"
+    lore:
+    - "&7The invite counts (and the rewards"
+    - "&7are given) only after the new player"
+    - "&7played these minutes. Stops fake accounts."
+    - ""
+    - "&7Current: {current}"
+    - ""
+    - "&#ff7a6bLeft-click &7+5  &#ff7a6bRight-click &7-5"
+    - "&#ff7a6bShift-click &7type a value (0 = off)"
+    current: "&#ff7a6b{value} &7minutes"
+    current-off: "&cOff"
+  storage:
+    name: "&fData storage"
+    lore:
+    - "&7Data saved in: &f{storage}"
+    - ""
+    - "&7Change &fstorage &7in config.yml, then"
+    - "&#ff7a6b/referrals migrate &7copies the data."
+    - "&7MySQL also links your servers"
+    - "&7(&fnetwork &7in config.yml)."
+  storage-network:
+    name: "&fStorage & network"
+    lore:
+    - "&7Data saved in: &f{storage}"
+    - "&7This server: &f{server}"
+    - "&7Gives rewards here: {rewards}"
+    - ""
+    - "&#ff7a6bClick &7rewards on this server on/off"
+    - "&7(off for a lobby)"
   referral-rewards:
-    name: "&eReferral rewards"
+    name: "&#ff7a6bReferral rewards"
     lore:
     - "&7Inviter reward and welcome reward,"
     - "&7separate from milestones."
     - ""
     - "&7Inviter: {inviter}"
     - "&7Invited: {invited}"
-    - "&eClick to open"
+    - "&#ff7a6bClick to open"
   inviter-rewards:
-    name: "&eInviter rewards"
+    name: "&#ff7a6bInviter rewards"
     lore:
     - "&7What the &finviter &7gets every time"
     - "&7a new player enters his name."
     - ""
     - "&7Status: {status}"
-    - "&eClick to edit"
+    - "&#ff7a6bClick to edit"
   invited-rewards:
     name: "&aInvited rewards"
     lore:
@@ -106,18 +150,18 @@ settings:
     - "&7he enters who invited him."
     - ""
     - "&7Status: {status}"
-    - "&eClick to edit"
+    - "&#ff7a6bClick to edit"
   milestones:
-    name: "&6Milestones"
+    name: "&#ff7a6bMilestones"
     lore:
     - "&7Rewards at 3 / 5 / 10... invites."
     - "&7Items, money, MobCoins, tokens,"
     - "&7custom coins, commands..."
     - ""
     - "&7Milestones: &f{amount}"
-    - "&eClick to edit"
+    - "&#ff7a6bClick to edit"
   currencies:
-    name: "&6Currencies"
+    name: "&#ff7a6bCurrencies"
     lore:
     - "&7Loaded currencies: &f{amount}"
     - ""
@@ -136,14 +180,14 @@ settings:
   top:
     name: "&bTop inviters"
     lore:
-    - "&eClick to open"
+    - "&#ff7a6bClick to open"
   player-access:
     name: "&aPlayer access"
     lore:
     - "&7Choose what normal players"
     - "&7(without admin) can open."
     - ""
-    - "&eClick to open"
+    - "&#ff7a6bClick to open"
   layouts:
     name: "&dMenu layouts"
     lore:
@@ -151,13 +195,33 @@ settings:
     - "&7the player menus with drag & drop."
     - "&7Also editable in &fmenus/*.yml&7."
     - ""
-    - "&eClick to open"
+    - "&#ff7a6bClick to open"
   reload:
     name: "&aReload"
     lore:
     - "&7Reload config, rewards and messages."
 rewardset:
   title: "&7Edit » {name}"
+  delivery:
+    name: "&fHow it is given"
+    lore:
+    - "&7Now: {mode}"
+    - ""
+    - "&fCollect menu &7= waits in /referrals collect"
+    - "&fRight away &7= given at once (or at next join)"
+    - "&#ff7a6bClick &7to change"
+    menu: "&aCollect menu"
+    auto: "&#ff7a6bRight away"
+    default: "&7like the setting ({mode}&7)"
+  servers:
+    name: "&bServers"
+    lore:
+    - "&7Where this reward can be received."
+    - ""
+    - "&7Now: &f{servers}"
+    - ""
+    - "&#ff7a6bClick &7to write them, e.g. &fskyblock, survival"
+    - "&fall &7= every server"
   header:
     type-inviter: "&7Given to the &finviter &7(the name written in /referrals <player>)"
     type-invited: "&7Given to the new player who writes &f/referrals <player>"
@@ -166,20 +230,22 @@ rewardset:
     - "{type}"
     - ""
     - "&7Status: {status}"
-    - "&eClick to turn on/off"
+    - "&7While off, rewards are kept and"
+    - "&7given when you turn it on again."
+    - "&#ff7a6bClick to turn on/off"
   preview-line: "&7 • &f{text}"
   preview-empty: "&7 • &7nothing"
   preview-more: "&7 • &7+{amount} more..."
   click-to-edit:
   - ""
-  - "&eClick to edit"
+  - "&#ff7a6bClick to edit"
   items:
     name: "&fItems &7({amount})"
     lore:
     - "&7Any item, custom items included."
     - ""
   currencies:
-    name: "&6Money & currencies"
+    name: "&#ff7a6bMoney & currencies"
     lore:
     - "&7Money, MobCoins, tokens, coins, XP..."
     - ""
@@ -204,22 +270,22 @@ rewardset:
     - "&7On: given &fevery {amount} invites &7(3, 6, 9...)"
     - "&7Off: given &fonce &7at {amount} invites"
     - ""
-    - "&eClick to switch"
+    - "&#ff7a6bClick to switch"
   amount:
-    name: "&fInvites needed: &e{amount}"
+    name: "&fInvites needed: &#ff7a6b{amount}"
     lore:
-    - "&eClick to change"
+    - "&#ff7a6bClick to change"
   rename:
     name: "&fName"
     lore:
     - "{name}"
     - ""
-    - "&eClick to rename"
+    - "&#ff7a6bClick to rename"
   icon:
     name: "&fIcon"
     lore:
-    - "&eLeft-click &7use the item in your hand"
-    - "&eRight-click &7use a head (player name"
+    - "&#ff7a6bLeft-click &7use the item in your hand"
+    - "&#ff7a6bRight-click &7use a head (player name"
     - "&7or minecraft-heads.com texture)"
   screen:
     name: "&bTitle, action bar & boss bar"
@@ -244,7 +310,7 @@ access:
   - ""
   - "&7Normal players: {status}"
   - "&7Admins can always open it."
-  - "&eClick to toggle"
+  - "&#ff7a6bClick to toggle"
   options:
     info:
       name: "&f/referrals info"
@@ -269,12 +335,17 @@ access:
       lore:
       - "&7Click a milestone / reward to"
       - "&7see what it gives."
+    collect:
+      name: "&fRewards to collect"
+      lore:
+      - "&7/referrals collect: rewards"
+      - "&7waiting to be taken."
   help:
-    name: "&eHow it works"
+    name: "&#ff7a6bHow it works"
     lore:
     - "&7Off = only admins can open it."
     - "&7With LuckPerms you can also deny"
-    - "&fflarereferrals.info/menu/rewards/top/preview"
+    - "&fflarereferrals.info/menu/rewards/top/preview/collect"
     - "&7to single groups."
 layout:
   list-title: "<gradient:#ff5f6d:#ffc371>Menu layouts</gradient>"
@@ -295,20 +366,23 @@ layout:
     preview:
       name: "&fReward preview"
       description: "&7What a reward gives"
+    collect:
+      name: "&fRewards to collect"
+      description: "&7/referrals collect"
   menu-entry:
   - "{description}"
   - ""
-  - "&7Size: &e{rows} rows &7({slots} slots)"
+  - "&7Size: &#ff7a6b{rows} rows &7({slots} slots)"
   - "&7Title: {title}"
   - "&7Open commands: &f{commands}"
   - "&7File: &f{file}"
   - ""
-  - "&eLeft-click &7edit with drag & drop"
-  - "&eRight-click &7+1 row (1-6)"
-  - "&eShift-left &7change title"
-  - "&eShift-right &7restore default"
+  - "&#ff7a6bLeft-click &7edit with drag & drop"
+  - "&#ff7a6bRight-click &7+1 row (1-6)"
+  - "&#ff7a6bShift-left &7change title"
+  - "&#ff7a6bShift-right &7restore default"
   help:
-    name: "&eHow it works"
+    name: "&#ff7a6bHow it works"
     lore:
     - "&7Open a menu in edit mode and move"
     - "&7everything like in a chest."
@@ -329,7 +403,7 @@ layout:
     - "&7for everyone. Off: its commands and"
     - "&7the buttons that open it disappear."
     - ""
-    - "&eClick to switch"
+    - "&#ff7a6bClick to switch"
   list-slot:
     name: "{element} &7» &fslot {number}"
     lore:
@@ -340,40 +414,40 @@ layout:
     - "&7Move it to move the slot."
     - "&7Take it out to remove the slot."
   palette-element:
-  - "&7Slots used now: &e{amount}"
+  - "&7Slots used now: &#ff7a6b{amount}"
   - ""
-  - "&eClick &7to put it here"
+  - "&#ff7a6bClick &7to put it here"
   palette-glass:
     name: "&fDecoration"
     lore:
-    - "&eClick &7to put it here"
+    - "&#ff7a6bClick &7to put it here"
   palette-help:
-    name: "&eAdd to this slot"
+    name: "&#ff7a6bAdd to this slot"
     lore:
     - "&7Pick a button of the menu or a glass."
     - "&7Any other item: drag it from your"
     - "&7inventory into the menu."
   elements:
     head: "&fYour stats (head)"
-    milestones: "&6Milestones list"
-    referral-rewards: "&eReferral rewards button"
+    milestones: "&#ff7a6bMilestones list"
+    referral-rewards: "&#ff7a6bReferral rewards button"
     top: "&bTop button"
     settings: "&cAdmin settings button"
     close: "&cClose button"
     info: "&fInfo book"
-    inviter: "&eInviter reward"
+    inviter: "&#ff7a6bInviter reward"
     invited: "&aWelcome reward"
     back: "&cBack button"
     entries: "&fTop players list"
     items: "&fRewards list"
-    edit: "&eEdit button (admins)"
+    edit: "&#ff7a6bEdit button (admins)"
 display:
   title: "&7Screen » {name}"
   off-text: "&7 • off"
   text-actions:
   - ""
-  - "&eLeft-click &7edit"
-  - "&eRight-click &7turn off"
+  - "&#ff7a6bLeft-click &7edit"
+  - "&#ff7a6bRight-click &7turn off"
   title-text:
     name: "&fTitle"
     lore:
@@ -389,11 +463,11 @@ display:
   times:
     name: "&fTitle duration"
     lore:
-    - "&7Fade-in: &e{in}s"
-    - "&7Stay: &e{stay}s"
-    - "&7Fade-out: &e{out}s"
+    - "&7Fade-in: &#ff7a6b{in}s"
+    - "&7Stay: &#ff7a6b{stay}s"
+    - "&7Fade-out: &#ff7a6b{out}s"
     - ""
-    - "&eClick &7to change"
+    - "&#ff7a6bClick &7to change"
   actionbar:
     name: "&fAction bar"
     lore:
@@ -408,25 +482,25 @@ display:
     - ""
     - "&7Now:"
   bossbar-color:
-    name: "&fBoss bar color: &e{value}"
+    name: "&fBoss bar color: &#ff7a6b{value}"
     lore:
-    - "&eLeft-click &7next  &eRight-click &7previous"
+    - "&#ff7a6bLeft-click &7next  &#ff7a6bRight-click &7previous"
   bossbar-style:
-    name: "&fBoss bar style: &e{value}"
+    name: "&fBoss bar style: &#ff7a6b{value}"
     lore:
-    - "&eLeft-click &7next  &eRight-click &7previous"
+    - "&#ff7a6bLeft-click &7next  &#ff7a6bRight-click &7previous"
   bossbar-seconds:
-    name: "&fBoss bar time: &e{value}s"
+    name: "&fBoss bar time: &#ff7a6b{value}s"
     lore:
-    - "&eLeft &7+1  &eRight &7-1"
-    - "&eShift &7+5 / -5"
+    - "&#ff7a6bLeft &7+1  &#ff7a6bRight &7-1"
+    - "&#ff7a6bShift &7+5 / -5"
   test:
     name: "&aTest on me"
     lore:
     - "&7Shows title, action bar and"
     - "&7boss bar to you right now."
   help:
-    name: "&eHow it works"
+    name: "&#ff7a6bHow it works"
     lore:
     - "&7Everything here is shown only to the"
     - "&7player who gets this reward:"
@@ -446,9 +520,9 @@ items:
     - "&7from &fminecraft-heads.com&7: paste"
     - "&7its Value / texture in chat."
     - ""
-    - "&eClick &7to add"
+    - "&#ff7a6bClick &7to add"
   help:
-    name: "&eHow it works"
+    name: "&#ff7a6bHow it works"
     lore:
     - "&7Put any item in the slots above."
     - "&7Custom items keep everything:"
@@ -469,8 +543,8 @@ currencies:
     - "&7Amount: &f{display}"
     - "&7{type} &7• &7{id}"
     - ""
-    - "&eLeft-click &7set amount"
-    - "&eRight-click &7remove"
+    - "&#ff7a6bLeft-click &7set amount"
+    - "&#ff7a6bRight-click &7remove"
   unavailable:
   - ""
   - "&cNot available: &7{reason}"
@@ -480,7 +554,7 @@ currencies:
     lore:
     - "&7Add them in config.yml"
   help:
-    name: "&eCurrencies"
+    name: "&#ff7a6bCurrencies"
     lore:
     - "&7Add more (MobCoins, tokens, coins...)"
     - "&7in &fconfig.yml &7> &fcurrencies&7."
@@ -490,9 +564,9 @@ lines:
     - "&7Line {line} · as written:"
     actions:
     - ""
-    - "&eLeft-click &7edit"
-    - "&eRight-click &7remove"
-    - "&eShift-click &7move up"
+    - "&#ff7a6bLeft-click &7edit"
+    - "&#ff7a6bRight-click &7remove"
+    - "&#ff7a6bShift-click &7move up"
   empty:
     name: "&7Nothing here yet"
     lore:
@@ -504,11 +578,11 @@ lines:
   clear:
     name: "&cClear all"
     lore:
-    - "&eShift-click &7to remove every line"
+    - "&#ff7a6bShift-click &7to remove every line"
   commands:
     title: "&7Commands &7({amount})"
     help:
-      name: "&eCommands"
+      name: "&#ff7a6bCommands"
       lore:
       - "&7Run by the console, without /"
       - ""
@@ -518,7 +592,7 @@ lines:
   messages:
     title: "&7Messages &7({amount})"
     help:
-      name: "&eMessages"
+      name: "&#ff7a6bMessages"
       lore:
       - "&7Sent to the player who gets the reward."
       - "&7The item name shows the preview."
@@ -529,7 +603,7 @@ lines:
   broadcast:
     title: "&7Broadcast &7({amount})"
     help:
-      name: "&eBroadcast"
+      name: "&#ff7a6bBroadcast"
       lore:
       - "&7Sent to the whole server."
       - "&7Same colors and placeholders as messages."
@@ -537,7 +611,7 @@ milestones:
   title: "<gradient:#ff5f6d:#ffc371>Milestones</gradient>"
   entry:
     lore:
-    - "&7Invites: &e{amount}"
+    - "&7Invites: &#ff7a6b{amount}"
     - "&7Status: {status}"
     - "&7Repeat: {repeat}"
     - ""
@@ -546,11 +620,11 @@ milestones:
     currency-line: "&7▪ {display}"
     actions:
     - ""
-    - "&eLeft-click &7edit"
-    - "&eRight-click &7enable/disable"
-    - "&eShift + right-click &7delete"
+    - "&#ff7a6bLeft-click &7edit"
+    - "&#ff7a6bRight-click &7enable/disable"
+    - "&#ff7a6bShift + right-click &7delete"
   help:
-    name: "&eMilestones"
+    name: "&#ff7a6bMilestones"
     lore:
     - "&7Each milestone gives rewards"
     - "&7when a player reaches X invites."
@@ -561,6 +635,7 @@ milestones:
 confirm:
   title: "&7Are you sure?"
   delete-milestone: "&7Delete the &f{amount} invites &7milestone?"
+  delete-milestone-waiting: "&7Delete the &f{amount} invites &7milestone? &c{waiting} not received yet&7: they come back if you make it again"
   accept:
     name: "&aConfirm"
     lore:

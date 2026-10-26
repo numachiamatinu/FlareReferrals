@@ -62,11 +62,17 @@ public final class RewardManager {
         }
         try {
             dev.tmdevelopment.flarereferrals.util.J8.write(file.toPath(),
-                    dev.tmdevelopment.flarereferrals.util.Headers.of(plugin, "rewards.yml") + yml.saveToString(),
+                    dev.tmdevelopment.flarereferrals.util.Headers.of(plugin, "rewards.yml") + comments(yml.saveToString()),
                     java.nio.charset.StandardCharsets.UTF_8);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save rewards.yml: " + e.getMessage());
         }
+    }
+
+    /** The two explanations inside "referral" (the file is written again, these would be lost). */
+    private static String comments(String yml) {
+        return yml.replaceFirst("(?m)^  inviter:$", "  # Owner of the referral code (the player written in /referrals <player>)\n  inviter:")
+                .replaceFirst("(?m)^  invited:$", "  # Player who used /referrals <player>\n  invited:");
     }
 
     public RewardSet inviter() { return inviter; }

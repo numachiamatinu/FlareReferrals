@@ -1,96 +1,849 @@
 # Internal: old default texts. When a server file still has one of these exactly, it is replaced
 # with the new default. Edited texts are never touched. Keys: file name with / and . written as _
 lang_en_yml:
-- path: "prefix"
-  old: "<gradient:#ff5f6d:#ffc371><bold>FLARES</bold></gradient> &7» &7"
-- path: "help.header"
+- path: prefix
+  old: <gradient:#ff5f6d:#ffc371><bold>FLARES</bold></gradient> &7» &7
+- path: help.header
   old:
-  - ""
-  - " &e&lFLARES REWARDS"
-- path: "input.header"
+  - ''
+  - ' &e&lFLARES REWARDS'
+- path: input.header
   old:
-  - ""
-  - " <gradient:#ff5f6d:#ffc371><bold>FLARES</bold></gradient> &7» &fType in chat"
-- path: "help.lines.refer"
-  old: " &e/{label} <player> &7- who invited you"
-- path: "referral.already-referred"
-  old: "{prefix}&cYou already said that &f{player} &cinvited you."
-- path: "referral.not-found"
-  old: "{prefix}&cThe player &f{player} &chas never joined the server."
-- path: "referral.self"
-  old: "{prefix}&cYou can't invite yourself!"
-- path: "referral.circular"
-  old: "{prefix}&cYou invited &f{player}&c, they can't be your inviter too."
-- path: "referral.need-playtime"
-  old: "{prefix}&cYou need at least &f{required} minutes &cof playtime &7(you have {played})."
-- path: "referral.same-ip"
-  old: "{prefix}&cYou can't use a referral from the same network."
-- path: "referral.success"
-  old: "{prefix}&aYou confirmed that &f{player} &ainvited you. Enjoy your rewards!"
-- path: "referral.received"
-  old: "{prefix}&f{player} &ajoined thanks to you! &7You now have &e{invites} &7invites."
-- path: "referral.broadcast"
-  old: "{prefix}&f{player} &7joined thanks to &e{inviter}&7! &7(&7{invites} invites&7)"
+  - ''
+  - ' <gradient:#ff5f6d:#ffc371><bold>FLARES</bold></gradient> &7» &fType in chat'
+- path: help.lines.refer
+  old: ' &e/{label} <player> &7- who invited you'
+- path: referral.already-referred
+  old: '{prefix}&cYou already said that &f{player} &cinvited you.'
+- path: referral.not-found
+  old: '{prefix}&cThe player &f{player} &chas never joined the server.'
+- path: referral.self
+  old: '{prefix}&cYou can''t invite yourself!'
+- path: referral.circular
+  old: '{prefix}&cYou invited &f{player}&c, they can''t be your inviter too.'
+- path: referral.need-playtime
+  old: '{prefix}&cYou need at least &f{required} minutes &cof playtime &7(you have {played}).'
+- path: referral.same-ip
+  old: '{prefix}&cYou can''t use a referral from the same network.'
+- path: referral.success
+  old: '{prefix}&aYou confirmed that &f{player} &ainvited you. Enjoy your rewards!'
+- path: referral.received
+  old: '{prefix}&f{player} &ajoined thanks to you! &7You now have &e{invites} &7invites.'
+- path: referral.broadcast
+  old: '{prefix}&f{player} &7joined thanks to &e{inviter}&7! &7(&7{invites} invites&7)'
+- path: help.lines.refer
+  old: '&e/{label} <player> &7- enter who invited you'
+- path: help.lines.info
+  old: '&e/{label} info &7- your invites'
+- path: help.lines.menu
+  old: '&e/{label} menu &7- rewards menu'
+- path: help.lines.collect
+  old: '&e/{label} collect &7- rewards to collect'
+- path: help.lines.rewards
+  old: '&e/{label} rewards &7- inviter and welcome rewards'
+- path: help.lines.top
+  old: '&e/{label} top &7- top inviters'
+- path: help.lines.milestone
+  old: '&e/{label} milestone <n> &7- rewards of a milestone'
+- path: help.lines.version
+  old: '&e/{label} version &7- version and updates'
+- path: help.admin
+  old:
+  - <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&e/{label} admin set <player> <n></hover></click> &7- set invites
+  - <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&e/{label} admin add <player> <n></hover></click> &7- add invites
+  - <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&e/{label} admin remove <player> <n></hover></click> &7- remove invites
+  - <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&e/{label} admin reset <player></hover></click> &7- reset a player
+  - '&e/{label} settings &7- admin menu'
+  - '&e/{label} layout &7- edit the menus'
+  - '&e/{label} reload &7- reload the files'
+  - <click:suggest_command:'/{label} migrate '><hover:show_text:'&7Click to write it'>&e/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data
+- path: referral.received
+  old: '{prefix}&f{player} &aentered you as the player who invited them! &7You now have &e{invites} &7invites.'
+- path: referral.broadcast
+  old: '{prefix}&f{player} &7was invited by &e{inviter}&7! &7({invites} invites)'
+- path: milestone.ready
+  old: '{prefix}&7Milestone &e{name} &7reached! <click:run_command:''/referrals claim {amount}''><hover:show_text:''&7Click to collect''>&e&n[Collect]</hover></click>'
+- path: milestone.remind
+  old: '{prefix}&7You have &e{amount} &7reward(s) to collect. <click:run_command:''/referrals claim''><hover:show_text:''&7Click to collect all''>&e&n[Collect]</hover></click>'
+- path: collect.remind
+  old: '{prefix}&7You have &e{amount} &7reward(s) to collect. <click:run_command:''/referrals collect''><hover:show_text:''&7Open the menu''>&a&n[Collect]</hover></click>'
+- path: collect.remind-claim
+  old: '{prefix}&7You have &e{amount} &7reward(s) to collect. <click:run_command:''/referrals claim''><hover:show_text:''&7Collect now''>&a&n[Collect]</hover></click>'
+- path: collect.inventory-full-some
+  old: '{prefix}&eSome rewards didn''t fit in your inventory: &7they stay in the menu.'
+- path: info.lines
+  old:
+  - ''
+  - ' <gradient:#ff5f6d:#ffc371><bold>REFERRAL INFO</bold></gradient> &7- &f{player}'
+  - ''
+  - ' &7▪ &7Invites: &e{invites}'
+  - ' &7▪ &7Invited by: &f{referrer}'
+  - ' &7▪ &7Next milestone: &f{next} &7(&7{remaining} left&7)'
+  - ''
+  - '{milestones}'
+  - ''
+- path: info.hover-claim
+  old: '&eClick to collect'
+- path: info.hover-admin
+  old: '&7Click to &eedit &7this milestone'
+- path: info.status.ready
+  old: '&e★'
+- path: info.status.repeat
+  old: '&e⟳'
+- path: top.line
+  old: ' &e#{position} &f{player} &7- &7{invites} invites'
+- path: admin.invites-updated
+  old: '{prefix}&f{player}&a: &7{before} &7→ &e{invites} &ainvites.'
+- path: admin.restart-needed
+  old: '{prefix}&eStorage / network settings changed: &frestart the server &eto use them.'
+- path: admin.migrate.not-empty
+  old: '{prefix}&c{type} already has &f{amount} &cplayers. &7To join them with the data of this server use &e{command}'
+- path: admin.migrate.summary
+  old:
+  - '{prefix}&7Copy &f{players} &7players and &f{rewards} &7rewards to &f{type}&7.'
+  - '&7The current data stays as a backup. Then restart the server.'
+  - <click:suggest_command:'{command}'><hover:show_text:'&7Click to write it'>&eType {command} &7to start</hover></click>
+- path: admin.migrate.summary-merge
+  old:
+  - '{prefix}&7Join &f{players} &7players of this server with the &f{amount} &7already in &f{type}&7.'
+  - '&7Same player on both: invites added up, the first inviter entered is kept, rewards kept.'
+  - '&cStop the other servers that use this database first, then start them again after the restart.'
+  - <click:suggest_command:'{command}'><hover:show_text:'&7Click to write it'>&eType {command} &7to start</hover></click>
+- path: admin.migrate.restart
+  old: '{prefix}&eRestart the server now. &7Until then referrals and rewards are paused, so nothing is lost.'
+- path: admin.layout-editing
+  old:
+  - ''
+  - ' <gradient:#ff5f6d:#ffc371><bold>EDITING MENU</bold></gradient> &7» &f{menu}'
+  - ' &7• &7Drag buttons and glass to move them'
+  - ' &7• &7Put any item from your inventory (glass, heads...) as decoration'
+  - ' &7• &7Take an item out to remove it'
+  - ' &7• &eShift + right-click &7an empty slot to add a button or glass'
+  - ' &7• &eShift + right-click &7an item to make it &cadmin only &7(players won''t see it)'
+  - ' &7• &7Close the menu to &asave'
+  - ''
+- path: usage.milestone
+  old: '{prefix}&7Use &e/{label} milestone <amount>'
+- path: usage.migrate
+  old:
+  - '{prefix}&e/{label} migrate <yaml|sqlite|mysql> [merge]'
+  - '&7Copies all the data to another storage (set &fstorage.mysql &7in config.yml first).'
+  - '&7merge = join with the data already there (two servers going on one database).'
+- path: usage.admin.unknown
+  old: '{prefix}&7Unknown action &e{action}'
+- path: usage.admin.missing-player
+  old: '{prefix}&7Missing the &eplayer'
+- path: usage.admin.missing-amount
+  old: '{prefix}&7Missing the &eamount'
+- path: usage.admin.overview
+  old:
+  - <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7admin
+  - ''
+  - <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&e/{label} admin set <player> <n></hover></click> &7- set invites (no rewards)
+  - <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&e/{label} admin add <player> <n></hover></click> &7- add invites (gives rewards)
+  - <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&e/{label} admin remove <player> <n></hover></click> &7- remove invites
+  - <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&e/{label} admin reset <player></hover></click> &7- reset a player
+  - <click:suggest_command:'/{label} admin resetclaimed '><hover:show_text:'&7Click to write it'>&e/{label} admin resetclaimed <player></hover></click> &7- forget received milestones
+- path: usage.admin.set
+  old:
+  - '{prefix}&e/{label} admin set <player> <n>'
+  - '&7Sets the exact invites, no rewards. Ex: &e/{label} admin set Steve 10'
+- path: usage.admin.add
+  old:
+  - '{prefix}&e/{label} admin add <player> <n>'
+  - '&7Adds invites and gives the milestones reached. Ex: &e/{label} admin add Steve 3'
+- path: usage.admin.remove
+  old:
+  - '{prefix}&e/{label} admin remove <player> <n>'
+  - '&7Removes invites, rewards already given stay. Ex: &e/{label} admin remove Steve 2'
+- path: usage.admin.reset
+  old:
+  - '{prefix}&e/{label} admin reset <player>'
+  - '&7Invites to 0, milestones and inviter forgotten. Ex: &e/{label} admin reset Steve'
+- path: usage.admin.resetclaimed
+  old:
+  - '{prefix}&e/{label} admin resetclaimed <player>'
+  - '&7Milestones can be received again at the next invite. Ex: &e/{label} admin resetclaimed Steve'
+- path: input.suggestion
+  old: ' &7» <hover:show_text:''&7Puts the current text in your chat bar''>&e&n[Click to edit the current text]</hover>'
+- path: version.update
+  old: '&eVersion &f{latest} &eis out! <click:open_url:''{url}''><hover:show_text:''&7Open the download page''>&e&n[Download]</hover></click>'
+- path: update.join
+  old: '{prefix}&7FlareReferrals &f{latest} &7is out &8(you have {version})&7. <click:open_url:''{url}''><hover:show_text:''&7Open the download page''>&e&n[Download]</hover></click>'
+- path: help.header
+  old:
+  - <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7v{version}
+  - ''
+- path: help.lines.refer
+  old: '&#ff7a6b/{label} <player> &7- enter who invited you'
+- path: help.lines.info
+  old: '&#ff7a6b/{label} info &7- your invites'
+- path: help.lines.menu
+  old: '&#ff7a6b/{label} menu &7- rewards menu'
+- path: help.lines.collect
+  old: '&#ff7a6b/{label} collect &7- rewards to collect'
+- path: help.lines.rewards
+  old: '&#ff7a6b/{label} rewards &7- inviter and welcome rewards'
+- path: help.lines.top
+  old: '&#ff7a6b/{label} top &7- top inviters'
+- path: help.lines.milestone
+  old: '&#ff7a6b/{label} milestone <n> &7- rewards of a milestone'
+- path: help.lines.version
+  old: '&#ff7a6b/{label} version &7- version and updates'
+- path: help.admin
+  old:
+  - <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites
+  - <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites
+  - <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites
+  - <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player
+  - '&#ff7a6b/{label} settings &7- admin menu'
+  - '&#ff7a6b/{label} layout &7- edit the menus'
+  - '&#ff7a6b/{label} reload &7- reload the files'
+  - <click:suggest_command:'/{label} migrate '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data
+- path: usage.admin.overview
+  old:
+  - <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7admin
+  - ''
+  - <click:suggest_command:'/{label} admin set '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites (no rewards)
+  - <click:suggest_command:'/{label} admin add '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites (gives rewards)
+  - <click:suggest_command:'/{label} admin remove '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites
+  - <click:suggest_command:'/{label} admin reset '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player
+  - <click:suggest_command:'/{label} admin resetclaimed '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin resetclaimed <player></hover></click> &7- forget received milestones
+- path: version.info
+  old:
+  - <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7v{version}
+  - ''
+  - '&7Minecraft: &f{minecraft} &8| &7Server: &f{software} &8| &7Java: &f{java}'
+  - '&7Storage: &f{storage}{network}'
+- path: version.checking
+  old: '&7Checking for updates...'
+- path: version.latest
+  old: '&aYou are using the latest version.'
+- path: version.update
+  old: '&#ff7a6bVersion &f{latest} &#ff7a6bis out! <click:open_url:''{url}''><hover:show_text:''&7Open the download page''>&#ff7a6b&n[Download]</hover></click>'
+- path: version.failed
+  old: '&7Could not check for updates right now, try again later.'
+- path: help.lines.info
+  old: ' &e/{label} info &7- your invites'
+- path: help.lines.menu
+  old: ' &e/{label} menu &7- rewards menu'
+- path: help.lines.rewards
+  old: ' &e/{label} rewards &7- inviter and welcome rewards'
+- path: help.lines.top
+  old: ' &e/{label} top &7- top inviters'
+- path: help.lines.milestone
+  old: ' &e/{label} milestone <n> &7- rewards of a milestone'
+- path: help.admin
+  old:
+  - ' <click:run_command:''/{label} admin''><hover:show_text:''&7Click for details''>&e/{label} admin &7- edit invites of a player</hover></click>'
+  - ' &e/{label} settings &7- admin menu'
+  - ' &e/{label} layout &7- edit the menus'
+  - ' &e/{label} reload &7- reload files'
+  - ''
+- path: usage.admin.overview
+  old:
+  - ''
+  - ' <click:suggest_command:''/{label} admin set <player> <n> ''><hover:show_text:''&7Click to write it''>&e/{label} admin set <player> <n></hover></click> &7- set invites (no rewards)'
+  - ' <click:suggest_command:''/{label} admin add <player> <n> ''><hover:show_text:''&7Click to write it''>&e/{label} admin add <player> <n></hover></click> &7- add invites (gives rewards)'
+  - ' <click:suggest_command:''/{label} admin remove <player> <n> ''><hover:show_text:''&7Click to write it''>&e/{label} admin remove <player> <n></hover></click> &7- remove invites'
+  - ' <click:suggest_command:''/{label} admin reset <player> ''><hover:show_text:''&7Click to write it''>&e/{label} admin reset <player></hover></click> &7- reset the player'
+  - ' <click:suggest_command:''/{label} admin resetclaimed <player> ''><hover:show_text:''&7Click to write it''>&e/{label} admin resetclaimed <player></hover></click> &7- forget received milestones'
+  - ''
+- path: input.layout-title
+  old: ' &7New &fmenu title &7(type &fdefault &7to use the one in lang/en.yml):'
+- path: help.lines.refer
+  old: ' &e/{label} <player> &7- enter who invited you to the server'
+- path: help.header
+  old:
+  - ''
+  - ' &e&lFLARE REFERRALS'
+- path: milestone.ready
+  old: '{prefix}&7Milestone &e{name} &7reached! <click:run_command:''/freferrals claim {amount}''><hover:show_text:''&7Click to collect''>&e&n[Collect]</hover></click>'
+- path: milestone.remind
+  old: '{prefix}&7You have &e{amount} &7reward(s) to collect. <click:run_command:''/freferrals claim''><hover:show_text:''&7Click to collect all''>&e&n[Collect]</hover></click>'
+- path: info.milestone-line
+  old: '  <click:run_command:''/freferrals milestone {amount}''><hover:show_text:''{hover}''>{status} &f{name} &7(&7{invites}&7/&7{target}&7)</hover></click>'
+- path: input.cancel-hint
+  old:
+  - ' &7» <click:run_command:''/freferrals cancel''><hover:show_text:''&7Cancel and go back to the menu''>&c&n[Cancel]</hover></click> &7or type &7{cancel} &7· {seconds}s'
+  - ''
+- path: help.admin
+  old:
+  - ' <click:suggest_command:''/{label} admin set ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites'
+  - ' <click:suggest_command:''/{label} admin add ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites'
+  - ' <click:suggest_command:''/{label} admin remove ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites'
+  - ' <click:suggest_command:''/{label} admin reset ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player'
+  - ' &#ff7a6b/{label} settings &7- admin menu'
+  - ' &#ff7a6b/{label} layout &7- edit the menus'
+  - ' &#ff7a6b/{label} reload &7- reload the files'
+  - ' <click:suggest_command:''/{label} migrate ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data'
+- path: help.admin
+  old:
+  - ''
+  - ' &cAdmin'
+  - ' &8▪ &f/{label} settings &8- &7Open the admin menu'
+  - ' &8▪ &f/{label} layout [menu] &8- &7Customize the menus (drag & drop)'
+  - ' &8▪ &f/{label} reload &8- &7Reload config, rewards and messages'
+  - ' &8▪ <click:run_command:''/{label} admin''><hover:show_text:''&7Click to see what they do''>&f/{label} admin &8- &7Edit invites of a player &8(click for details)</hover></click>'
+  - ''
+- path: help.admin
+  old:
+  - ''
+  - ' &cAdmin'
+  - ' &8▪ &f/%label% settings &8- &7Open the admin menu'
+  - ' &8▪ &f/%label% reload &8- &7Reload config, rewards and messages'
+  - ' &8▪ &f/%label% admin set|add|remove <player> <amount>'
+  - ' &8▪ &f/%label% admin reset|resetclaimed <player>'
+  - ''
+- path: help.admin
+  old:
+  - ''
+  - ' &cAdmin'
+  - ' &8▪ &f/{label} settings &8- &7Open the admin menu'
+  - ' &8▪ &f/{label} layout [menu] &8- &7Customize the menus (drag & drop)'
+  - ' &8▪ &f/{label} reload &8- &7Reload config, rewards and messages'
+  - ' &8▪ &f/{label} admin set|add|remove <player> <amount>'
+  - ' &8▪ &f/{label} admin reset|resetclaimed <player>'
+  - ''
+- path: help.admin
+  old:
+  - ''
+  - ' &cAdmin'
+  - ' &8▪ &f/{label} settings &8- &7Open the admin menu'
+  - ' &8▪ &f/{label} reload &8- &7Reload config, rewards and messages'
+  - ' &8▪ &f/{label} admin set|add|remove <player> <amount>'
+  - ' &8▪ &f/{label} admin reset|resetclaimed <player>'
+  - ''
+- path: help.admin
+  old:
+  - ' <click:run_command:''/{label} admin''><hover:show_text:''&7Click for details''>&e/{label} admin &7- edit invites of a player</hover></click>'
+  - ' &e/{label} settings &7- admin menu'
+  - ' &e/{label} layout &7- edit the menus'
+  - ' &e/{label} reload &7- reload files'
+  - ' <click:suggest_command:''/{label} migrate ''><hover:show_text:''&7Click to write it''>&e/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data (database, network)'
+  - ''
 menus_admin_yml:
-- path: "settings.title"
-  old: "<gradient:#ff5f6d:#ffc371>Flares Rewards</gradient> &7- Settings"
-- path: "settings.options.referral-enabled.lore"
+- path: settings.title
+  old: <gradient:#ff5f6d:#ffc371>Flares Rewards</gradient> &7- Settings
+- path: settings.options.referral-enabled.lore
   old:
-  - "&7Enable or disable &f/referrals <player>&7."
-- path: "settings.options.same-ip.lore"
+  - '&7Enable or disable &f/referrals <player>&7.'
+- path: settings.options.same-ip.lore
   old:
-  - "&7Block referrals between players"
-  - "&7joining from the same network."
-- path: "settings.options.circular.lore"
+  - '&7Block referrals between players'
+  - '&7joining from the same network.'
+- path: settings.options.circular.lore
   old:
-  - "&7If A invited B, B can't say A"
-  - "&7was invited by him."
-- path: "settings.playtime.lore"
+  - '&7If A invited B, B can''t say A'
+  - '&7was invited by him.'
+- path: settings.playtime.lore
   old:
-  - "&7Playtime needed to use /referrals."
-  - ""
-  - "&7Current: &e{value} minutes"
-  - ""
-  - "&eLeft-click &7+5  &eRight-click &7-5"
-  - "&eShift-click &7type a value"
-- path: "settings.inviter-rewards.lore"
+  - '&7Playtime needed to use /referrals.'
+  - ''
+  - '&7Current: &e{value} minutes'
+  - ''
+  - '&eLeft-click &7+5  &eRight-click &7-5'
+  - '&eShift-click &7type a value'
+- path: settings.inviter-rewards.lore
   old:
-  - "&7What the &finviter &7gets every time"
-  - "&7someone uses /referrals <his name>."
-  - ""
-  - "&7Status: {status}"
-  - "&eClick to edit"
-- path: "settings.invited-rewards.lore"
+  - '&7What the &finviter &7gets every time'
+  - '&7someone uses /referrals <his name>.'
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to edit'
+- path: settings.invited-rewards.lore
   old:
-  - "&7What the player who uses"
-  - "&f/referrals <player> &7gets."
-  - ""
-  - "&7Status: {status}"
-  - "&eClick to edit"
-- path: "rewardset.header.type-inviter"
-  old: "&7Given to the &finviter &7(the player in /referrals <player>)"
-- path: "rewardset.header.type-invited"
-  old: "&7Given to the player who uses &f/referrals <player>"
+  - '&7What the player who uses'
+  - '&f/referrals <player> &7gets.'
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to edit'
+- path: rewardset.header.type-inviter
+  old: '&7Given to the &finviter &7(the player in /referrals <player>)'
+- path: rewardset.header.type-invited
+  old: '&7Given to the player who uses &f/referrals <player>'
+- path: names.inviter
+  old: '&eInviter reward'
+- path: settings.toggle-lore
+  old:
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to toggle'
+- path: settings.playtime.lore
+  old:
+  - '&7Playtime a player needs before'
+  - '&7entering who invited them.'
+  - ''
+  - '&7Current: &e{value} minutes'
+  - ''
+  - '&eLeft-click &7+5  &eRight-click &7-5'
+  - '&eShift-click &7type a value'
+- path: settings.max-days.lore
+  old:
+  - '&7Days after the first join in which'
+  - '&7a player can enter who invited him.'
+  - ''
+  - '&7Current: &e{value} &7days'
+  - ''
+  - '&eLeft-click &7+1  &eRight-click &7-1'
+  - '&eShift-click &7type a value (0 = off)'
+- path: settings.verify.lore
+  old:
+  - '&7The invite counts (and the rewards'
+  - '&7are given) only after the new player'
+  - '&7played these minutes. Stops fake accounts.'
+  - ''
+  - '&7Current: &e{value} &7minutes'
+  - ''
+  - '&eLeft-click &7+5  &eRight-click &7-5'
+  - '&eShift-click &7type a value (0 = off)'
+- path: settings.storage.lore
+  old:
+  - '&7Data saved in: &f{storage}'
+  - ''
+  - '&7Change &fstorage &7in config.yml, then'
+  - '&e/referrals migrate &7copies the data.'
+  - '&7MySQL also links your servers'
+  - '&7(&fnetwork &7in config.yml).'
+- path: settings.storage-network.lore
+  old:
+  - '&7Data saved in: &f{storage}'
+  - '&7This server: &f{server}'
+  - '&7Gives rewards here: {rewards}'
+  - ''
+  - '&eClick &7rewards on this server on/off'
+  - '&7(off for a lobby)'
+- path: settings.referral-rewards.name
+  old: '&eReferral rewards'
+- path: settings.referral-rewards.lore
+  old:
+  - '&7Inviter reward and welcome reward,'
+  - '&7separate from milestones.'
+  - ''
+  - '&7Inviter: {inviter}'
+  - '&7Invited: {invited}'
+  - '&eClick to open'
+- path: settings.inviter-rewards.name
+  old: '&eInviter rewards'
+- path: settings.inviter-rewards.lore
+  old:
+  - '&7What the &finviter &7gets every time'
+  - '&7a new player enters his name.'
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to edit'
+- path: settings.invited-rewards.lore
+  old:
+  - '&7What the new player gets when'
+  - '&7he enters who invited him.'
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to edit'
+- path: settings.milestones.name
+  old: '&6Milestones'
+- path: settings.milestones.lore
+  old:
+  - '&7Rewards at 3 / 5 / 10... invites.'
+  - '&7Items, money, MobCoins, tokens,'
+  - '&7custom coins, commands...'
+  - ''
+  - '&7Milestones: &f{amount}'
+  - '&eClick to edit'
+- path: settings.currencies.name
+  old: '&6Currencies'
+- path: settings.top.lore
+  old:
+  - '&eClick to open'
+- path: settings.player-access.lore
+  old:
+  - '&7Choose what normal players'
+  - '&7(without admin) can open.'
+  - ''
+  - '&eClick to open'
+- path: settings.layouts.lore
+  old:
+  - '&7Move buttons, glass and heads of'
+  - '&7the player menus with drag & drop.'
+  - '&7Also editable in &fmenus/*.yml&7.'
+  - ''
+  - '&eClick to open'
+- path: rewardset.delivery.lore
+  old:
+  - '&7Now: {mode}'
+  - ''
+  - '&fCollect menu &7= waits in /referrals collect'
+  - '&fRight away &7= given at once (or at next join)'
+  - '&eClick &7to change'
+- path: rewardset.delivery.auto
+  old: '&eRight away'
+- path: rewardset.servers.lore
+  old:
+  - '&7Where this reward can be received.'
+  - ''
+  - '&7Now: &f{servers}'
+  - ''
+  - '&eClick &7to write them, e.g. &fskyblock, survival'
+  - '&fall &7= every server'
+- path: rewardset.header.lore
+  old:
+  - '{type}'
+  - ''
+  - '&7Status: {status}'
+  - '&eClick to turn on/off'
+- path: rewardset.click-to-edit
+  old:
+  - ''
+  - '&eClick to edit'
+- path: rewardset.currencies.name
+  old: '&6Money & currencies'
+- path: rewardset.repeat.lore
+  old:
+  - '&7On: given &fevery {amount} invites &7(3, 6, 9...)'
+  - '&7Off: given &fonce &7at {amount} invites'
+  - ''
+  - '&eClick to switch'
+- path: rewardset.amount.name
+  old: '&fInvites needed: &e{amount}'
+- path: rewardset.amount.lore
+  old:
+  - '&eClick to change'
+- path: rewardset.rename.lore
+  old:
+  - '{name}'
+  - ''
+  - '&eClick to rename'
+- path: rewardset.icon.lore
+  old:
+  - '&eLeft-click &7use the item in your hand'
+  - '&eRight-click &7use a head (player name'
+  - '&7or minecraft-heads.com texture)'
+- path: access.toggle-lore
+  old:
+  - ''
+  - '&7Normal players: {status}'
+  - '&7Admins can always open it.'
+  - '&eClick to toggle'
+- path: access.help.name
+  old: '&eHow it works'
+- path: layout.menu-entry
+  old:
+  - '{description}'
+  - ''
+  - '&7Size: &e{rows} rows &7({slots} slots)'
+  - '&7Title: {title}'
+  - '&7Open commands: &f{commands}'
+  - '&7File: &f{file}'
+  - ''
+  - '&eLeft-click &7edit with drag & drop'
+  - '&eRight-click &7+1 row (1-6)'
+  - '&eShift-left &7change title'
+  - '&eShift-right &7restore default'
+- path: layout.help.name
+  old: '&eHow it works'
+- path: layout.toggle.lore
+  old:
+  - '&7Turn the &f{menu} &7menu on or off'
+  - '&7for everyone. Off: its commands and'
+  - '&7the buttons that open it disappear.'
+  - ''
+  - '&eClick to switch'
+- path: layout.palette-element
+  old:
+  - '&7Slots used now: &e{amount}'
+  - ''
+  - '&eClick &7to put it here'
+- path: layout.palette-glass.lore
+  old:
+  - '&eClick &7to put it here'
+- path: layout.palette-help.name
+  old: '&eAdd to this slot'
+- path: layout.elements.milestones
+  old: '&6Milestones list'
+- path: layout.elements.referral-rewards
+  old: '&eReferral rewards button'
+- path: layout.elements.inviter
+  old: '&eInviter reward'
+- path: layout.elements.edit
+  old: '&eEdit button (admins)'
+- path: display.text-actions
+  old:
+  - ''
+  - '&eLeft-click &7edit'
+  - '&eRight-click &7turn off'
+- path: display.times.lore
+  old:
+  - '&7Fade-in: &e{in}s'
+  - '&7Stay: &e{stay}s'
+  - '&7Fade-out: &e{out}s'
+  - ''
+  - '&eClick &7to change'
+- path: display.bossbar-color.name
+  old: '&fBoss bar color: &e{value}'
+- path: display.bossbar-color.lore
+  old:
+  - '&eLeft-click &7next  &eRight-click &7previous'
+- path: display.bossbar-style.name
+  old: '&fBoss bar style: &e{value}'
+- path: display.bossbar-style.lore
+  old:
+  - '&eLeft-click &7next  &eRight-click &7previous'
+- path: display.bossbar-seconds.name
+  old: '&fBoss bar time: &e{value}s'
+- path: display.bossbar-seconds.lore
+  old:
+  - '&eLeft &7+1  &eRight &7-1'
+  - '&eShift &7+5 / -5'
+- path: display.help.name
+  old: '&eHow it works'
+- path: items.add-head.lore
+  old:
+  - '&7Player head by name, or any head'
+  - '&7from &fminecraft-heads.com&7: paste'
+  - '&7its Value / texture in chat.'
+  - ''
+  - '&eClick &7to add'
+- path: items.help.name
+  old: '&eHow it works'
+- path: currencies.entry.lore
+  old:
+  - '&7Amount: &f{display}'
+  - '&7{type} &7• &7{id}'
+  - ''
+  - '&eLeft-click &7set amount'
+  - '&eRight-click &7remove'
+- path: currencies.help.name
+  old: '&eCurrencies'
+- path: lines.entry.actions
+  old:
+  - ''
+  - '&eLeft-click &7edit'
+  - '&eRight-click &7remove'
+  - '&eShift-click &7move up'
+- path: lines.clear.lore
+  old:
+  - '&eShift-click &7to remove every line'
+- path: lines.commands.help.name
+  old: '&eCommands'
+- path: lines.messages.help.name
+  old: '&eMessages'
+- path: lines.broadcast.help.name
+  old: '&eBroadcast'
+- path: milestones.entry.lore
+  old:
+  - '&7Invites: &e{amount}'
+  - '&7Status: {status}'
+  - '&7Repeat: {repeat}'
+  - ''
+  - '&7Items: &f{items}'
+  - '&7Commands: &f{commands}'
+- path: milestones.entry.actions
+  old:
+  - ''
+  - '&eLeft-click &7edit'
+  - '&eRight-click &7enable/disable'
+  - '&eShift + right-click &7delete'
+- path: milestones.help.name
+  old: '&eMilestones'
+- path: access.help.lore
+  old:
+  - '&7Off = only admins can open it.'
+  - '&7With LuckPerms you can also deny'
+  - '&fflaresrewards.info/menu/rewards/top/preview'
+  - '&7to single groups.'
+- path: access.help.lore
+  old:
+  - '&7Off = only admins can open it.'
+  - '&7With LuckPerms you can also deny'
+  - '&fflarereferrals.info/menu/rewards/top/preview'
+  - '&7to single groups.'
+- path: settings.options.referral-enabled.lore
+  old:
+  - '&7New players write &f/freferrals <player>'
+  - '&7with the name of who invited them.'
+- path: rewardset.header.type-inviter
+  old: '&7Given to the &finviter &7(the name written in /freferrals <player>)'
+- path: rewardset.header.type-invited
+  old: '&7Given to the new player who writes &f/freferrals <player>'
+- path: access.options.info.name
+  old: '&f/freferrals info'
+- path: access.options.menu.lore
+  old:
+  - '&7/freferrals menu with the progress.'
+- path: access.options.rewards.lore
+  old:
+  - '&7/freferrals rewards: inviter and'
+  - '&7welcome reward.'
+- path: access.options.top.lore
+  old:
+  - '&7/freferrals top and the top menu.'
+- path: layout.menus.main.description
+  old: '&7/freferrals menu'
+- path: layout.menus.rewards.description
+  old: '&7/freferrals rewards'
+- path: settings.max-days.lore
+  old:
+  - '&7Days after the first join in which'
+  - '&7a player can enter who invited him.'
+  - ''
+  - '&7Current: &#ff7a6b{value} &7days'
+  - ''
+  - '&#ff7a6bLeft-click &7+1  &#ff7a6bRight-click &7-1'
+  - '&#ff7a6bShift-click &7type a value (0 = off)'
+- path: settings.verify.lore
+  old:
+  - '&7The invite counts (and the rewards'
+  - '&7are given) only after the new player'
+  - '&7played these minutes. Stops fake accounts.'
+  - ''
+  - '&7Current: &#ff7a6b{value} &7minutes'
+  - ''
+  - '&#ff7a6bLeft-click &7+5  &#ff7a6bRight-click &7-5'
+  - '&#ff7a6bShift-click &7type a value (0 = off)'
+- path: rewardset.header.lore
+  old:
+  - '{type}'
+  - ''
+  - '&7Status: {status}'
+  - '&#ff7a6bClick to turn on/off'
 menus_rewards_yml:
-- path: "elements.info.lore"
+- path: elements.info.lore
   old:
-  - "&7When a new player types"
-  - "&f/referrals <player>&7:"
-  - "&7 • &ethe inviter &7gets the left reward"
-  - "&7 • &athe new player &7gets the right reward"
-  - ""
-  - "&7Milestone rewards are separate."
-- path: "elements.inviter.lore"
+  - '&7When a new player types'
+  - '&f/referrals <player>&7:'
+  - '&7 • &ethe inviter &7gets the left reward'
+  - '&7 • &athe new player &7gets the right reward'
+  - ''
+  - '&7Milestone rewards are separate.'
+- path: elements.inviter.lore
   old:
-  - "&7Given every time someone"
-  - "&7says you invited them."
-  - ""
-  - "&7Status: {status}"
-  - ""
-- path: "elements.invited.lore"
+  - '&7Given every time someone'
+  - '&7says you invited them.'
+  - ''
+  - '&7Status: {status}'
+  - ''
+- path: elements.invited.lore
   old:
-  - "&7Given to the new player"
-  - "&7who uses /referrals <player>."
-  - ""
-  - "&7Status: {status}"
-  - ""
+  - '&7Given to the new player'
+  - '&7who uses /referrals <player>.'
+  - ''
+  - '&7Status: {status}'
+  - ''
+- path: elements.info.lore
+  old:
+  - '&7Invited by a friend? Write'
+  - '&f/referrals <his name>&7:'
+  - '&7 • &ethe inviter &7gets the left reward'
+  - '&7 • &athe new player &7gets the right reward'
+  - ''
+  - '&7Milestone rewards are separate.'
+- path: elements.inviter.name
+  old: '&eInviter reward'
+- path: elements.milestones.name
+  old: '&6Milestones'
+- path: elements.milestones.lore
+  old:
+  - '&7Extra rewards at 3 / 5 / 10 invites.'
+  - ''
+  - '&eClick to open'
+- path: texts.click-admin
+  old:
+  - ''
+  - '&eLeft-click &7edit'
+  - '&eRight-click &7turn on/off'
+- path: texts.click-player
+  old:
+  - ''
+  - '&eClick &7to see the items'
+- path: title
+  old: ''
+- path: elements.info.lore
+  old:
+  - '&7Invited by a friend? Write'
+  - '&f/freferrals <his name>&7:'
+  - '&7 • &ethe inviter &7gets the left reward'
+  - '&7 • &athe new player &7gets the right reward'
+  - ''
+  - '&7Milestone rewards are separate.'
+menus_collect_yml:
+- path: elements.info.lore
+  old:
+  - '&7Waiting: &e{amount}'
+  - '&7Rewards stay here until you take them.'
+- path: elements.rewards.name
+  old: '&e{reward}'
+- path: elements.rewards.lore
+  old:
+  - '{preview}'
+  - ''
+  - '&7Since: &f{date}'
+  - '&eLeft-click &7to collect'
+  - '&eRight-click &7to see everything'
+- path: elements.previous-page.name
+  old: '&e← Page {page}/{pages}'
+- path: elements.next-page.name
+  old: '&ePage {page}/{pages} →'
+- path: texts.elsewhere
+  old:
+  - '{preview}'
+  - ''
+  - '&7Collect it on &f{servers}'
+  - '&eRight-click &7to see everything'
+menus_main_yml:
+- path: elements.head.lore
+  old:
+  - '&7Invites: &e{invites}'
+  - '&7Invited by: &f{referrer}'
+  - '&7Next milestone: &f{next}'
+- path: elements.referral-rewards.name
+  old: '&eReferral rewards'
+- path: elements.referral-rewards.lore
+  old:
+  - '&7What you get for inviting players'
+  - '&7and what new players get.'
+  - ''
+  - '&eClick to open'
+- path: elements.top.lore
+  old:
+  - '&eClick to open'
+- path: elements.collect.lore
+  old:
+  - '&7Waiting: &e{amount}'
+  - ''
+  - '&eClick to open'
+- path: texts.milestone.ready
+  old:
+  - '&e★ Ready to collect!'
+- path: texts.milestone.claim-click
+  old:
+  - ''
+  - '&eClick to collect'
+- path: texts.milestone.locked
+  old:
+  - '&7Progress: &e{invites}&7/&e{target}'
+  - '&7Missing: &f{remaining}'
+- path: texts.milestone.repeat
+  old:
+  - '&e⟳ Every {amount} invites'
+  - '&7Next at &e{target} &7({remaining} left)'
+- path: texts.milestone.click
+  old:
+  - ''
+  - '&eClick &7to see the rewards'
+- path: title
+  old: ''
+- path: elements.settings.lore
+  old:
+  - '&7Open /freferrals settings'
+menus_preview_yml:
+- path: elements.edit.name
+  old: '&eEdit'
+- path: title
+  old: ''
+menus_top_yml:
+- path: elements.entries.name
+  old: '&e#{position} &f{player}'
+- path: elements.entries.lore
+  old:
+  - '&7Invites: &e{invites}'
+- path: title
+  old: ''

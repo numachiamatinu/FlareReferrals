@@ -342,6 +342,7 @@ public abstract class LayoutMenu extends Menu {
             for (int s : en.getValue().slots) if (s >= size) newSlots.get(en.getKey()).add(s);
         }
         List<MenuLayout.Decoration> newDecos = new ArrayList<>();
+        List<ItemStack> placed = new ArrayList<>();
 
         for (int slot = 0; slot < size; slot++) {
             ItemStack it = inv.getItem(slot);
@@ -369,6 +370,7 @@ public abstract class LayoutMenu extends Menu {
             }
             // new item placed by the admin: written in a readable form (material, name, lore, glow,
             // actions) so it can be edited later in menus/<menu>.yml
+            placed.add(it.clone());
             MenuLayout.Decoration described = describe(it);
             String key = keyOf(described);
             MenuLayout.Decoration target = null;
@@ -399,6 +401,12 @@ public abstract class LayoutMenu extends Menu {
             layout.decorations().add(d);
         }
         plugin.layouts().save(layoutId);
+        // the menu keeps a decoration made from the item, the admin gets his item back
+        for (int slot = 0; slot < size; slot++) {
+            ItemStack it = inv.getItem(slot);
+            if (it != null && !it.getType().isAir() && read(it, keyElement) == null && read(it, keyDeco) == null) inv.setItem(slot, null);
+        }
+        giveBack(placed);
     }
 
     /** Turns any item into an editable decoration: material (heads keep their texture), name, lore, glow. */

@@ -10,6 +10,8 @@
 #  commands     run by console, no /   ·   "lp user {player} parent add vip"
 #  messages     to the player   ·   broadcast: to everyone
 #  display      title, subtitle, actionbar, bossbar   ·   times in ticks (20 = 1s)
+#  delivery     default (config.yml rewards.collect-menu) · menu = waits in /referrals collect · auto = given right away
+#  servers      network only: where it can be received   ·   [all] or [skyblock, survival]
 #  Placeholders {player} {invites} {milestone} {inviter} {invited} {prefix}
 #
 #  ── Format ──────────────────────────────────────────────
@@ -86,7 +88,7 @@ milestones:
     broadcast: []
     display:
       title:
-        title: "&e3 INVITES"
+        title: "&#ff7a6b3 INVITES"
         subtitle: "&7Milestone reward received"
         fade-in: 10
         stay: 60
@@ -111,10 +113,10 @@ milestones:
     messages:
       - "{prefix}&aYou reached &f5 invites&a! Milestone reward received."
     broadcast:
-      - "{prefix}&f{player} &7reached &e5 invites&7!"
+      - "{prefix}&f{player} &7reached &#ff7a6b5 invites&7!"
     display:
       title:
-        title: "&e5 INVITES"
+        title: "&#ff7a6b5 INVITES"
         subtitle: "&7Milestone reward received"
         fade-in: 10
         stay: 60
@@ -143,7 +145,7 @@ milestones:
       - "{prefix}&f{player} &7reached &b10 invites&7! Legend."
     display:
       title:
-        title: "&e10 INVITES"
+        title: "&#ff7a6b10 INVITES"
         subtitle: "&7Milestone reward received"
         fade-in: 10
         stay: 60

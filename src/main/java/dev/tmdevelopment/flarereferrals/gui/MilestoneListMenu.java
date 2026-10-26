@@ -32,7 +32,7 @@ public final class MilestoneListMenu extends Menu {
             if (slot >= 45) break;
             set(slot++, icon(m), e -> {
                 if (e.isShiftClick() && e.isRightClick()) {
-                    new ConfirmMenu(plugin, viewer, Text.replace(lang().raw("gui.confirm.delete-milestone"), "%amount%", String.valueOf(m.amount())), () -> {
+                    new ConfirmMenu(plugin, viewer, MilestoneListMenu.deleteQuestion(plugin, m.amount()), () -> {
                         plugin.rewards().delete(m.amount());
                         lang().send(viewer, "admin.milestone-deleted", "%amount%", String.valueOf(m.amount()));
                         openLater();
@@ -40,6 +40,7 @@ public final class MilestoneListMenu extends Menu {
                 } else if (e.isRightClick()) {
                     m.enabled(!m.enabled());
                     plugin.rewards().save();
+                    if (m.enabled()) plugin.referrals().rewardTurnedOn(m); // what waited while it was off
                     refresh();
                 } else {
                     new RewardSetMenu(plugin, viewer, m, this).openLater();
@@ -98,5 +99,12 @@ public final class MilestoneListMenu extends Menu {
                 .glow(m.enabled())
                 .hideFlags()
                 .build();
+    }
+
+    /** "Delete the 5 invites milestone?", with how many rewards of it players have not received yet. */
+    static String deleteQuestion(FlareReferrals plugin, int amount) {
+        int waiting = plugin.data().waiting(amount);
+        String key = waiting > 0 ? "gui.confirm.delete-milestone-waiting" : "gui.confirm.delete-milestone";
+        return Text.replace(plugin.lang().raw(key), "%amount%", String.valueOf(amount), "%waiting%", String.valueOf(waiting));
     }
 }

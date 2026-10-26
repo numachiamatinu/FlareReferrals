@@ -134,6 +134,12 @@ public abstract class Menu implements InventoryHolder {
         e.setCancelled(true);
         int raw = e.getRawSlot();
         if (raw < 0 || raw >= inventory.getSize()) return;
+        // only left / right clicks (with or without shift): Q, number keys, F, middle and double click do nothing
+        org.bukkit.event.inventory.ClickType c = e.getClick();
+        if (c != org.bukkit.event.inventory.ClickType.LEFT && c != org.bukkit.event.inventory.ClickType.RIGHT
+                && c != org.bukkit.event.inventory.ClickType.SHIFT_LEFT && c != org.bukkit.event.inventory.ClickType.SHIFT_RIGHT) {
+            return;
+        }
         Consumer<InventoryClickEvent> a = actions.get(raw);
         if (a != null) {
             plugin.referrals().sound(viewer, "click");
@@ -143,6 +149,16 @@ public abstract class Menu implements InventoryHolder {
 
     public void handleDrag(InventoryDragEvent e) {
         e.setCancelled(true);
+    }
+
+    /** Gives copies back to the viewer (an item put in an editor stays in the admin's inventory too). */
+    protected void giveBack(java.util.List<ItemStack> items) {
+        for (ItemStack it : items) {
+            if (it == null || it.getType().isAir()) continue;
+            for (ItemStack left : viewer.getInventory().addItem(it.clone()).values()) {
+                viewer.getWorld().dropItemNaturally(viewer.getLocation(), left);
+            }
+        }
     }
 
     public void handleClose(InventoryCloseEvent e) {

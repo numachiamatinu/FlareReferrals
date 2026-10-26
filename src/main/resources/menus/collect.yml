@@ -1,0 +1,99 @@
+#  Flare Referrals · menu 'collect' (/referrals collect, rewards waiting to be collected)
+#  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#
+#  enabled         false = menu off for everyone
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [rewards] → /rewards opens it   ·   open-permission: "" = everyone
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  admin-only      true = players don't see it
+#  actions         [close] [open] top [player] cmd [console] cmd [message] text [sound] key
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+enabled: true
+open-commands: []
+open-permission: ""
+title: "<gradient:#ff5f6d:#ffc371>Rewards to collect</gradient>"
+rows: 6
+elements:
+  info:
+    # placeholders: {amount} (can be collected here) {total} (all waiting)
+    slots: "4"
+    admin-only: false
+    material: "CHEST_MINECART"
+    name: "&aRewards to collect"
+    lore:
+      - "&7Waiting: &#ff7a6b{amount}"
+      - "&7Rewards stay here until you take them."
+  rewards:
+    # one slot per reward. placeholders: {reward} {inviter} {invited} {date} {servers}
+    # the line {preview} becomes the list of what the reward gives
+    slots: "19-25,28-34,37-43"
+    admin-only: false
+    name: "&#ff7a6b{reward}"
+    lore:
+      - "{preview}"
+      - ""
+      - "&7Since: &f{date}"
+      - "&#ff7a6bLeft-click &7to collect"
+      - "&#ff7a6bRight-click &7to see everything"
+  collect-all:
+    slots: "49"
+    admin-only: false
+    material: "HOPPER"
+    name: "&aCollect all &7({amount})"
+    lore:
+      - "&7Everything that fits in"
+      - "&7your inventory."
+  previous-page:
+    # placeholders: {page} {pages}
+    slots: "47"
+    admin-only: false
+    material: "SPECTRAL_ARROW"
+    name: "&#ff7a6b← Page {page}/{pages}"
+    lore: []
+  next-page:
+    slots: "51"
+    admin-only: false
+    material: "SPECTRAL_ARROW"
+    name: "&#ff7a6bPage {page}/{pages} →"
+    lore: []
+  back:
+    slots: "45"
+    admin-only: false
+    material: "ARROW"
+    name: "&c← Back"
+    lore: []
+decorations:
+  - slots: "0-3,5-8,9,17,18,26,27,35,36,44,46,48,50,52,53"
+    material: "GRAY_STAINED_GLASS_PANE"
+    name: " "
+    lore: []
+    glow: false
+    admin-only: false
+    actions: []
+
+# ── Texts of this menu ──
+# elsewhere = lore of a reward that can be collected only on another server (network)
+texts:
+  elsewhere:
+    - "{preview}"
+    - ""
+    - "&7Collect it on &f{servers}"
+    - "&#ff7a6bRight-click &7to see everything"
+  empty:
+    name: "&7Nothing to collect"
+    lore:
+      - "&7New rewards appear here."
+  date-format: "dd/MM/yyyy HH:mm"
+  preview-item: "&7▪ &f{amount}x {item}"
+  preview-more: "&7▪ &7+{amount} more items"
+  preview-currency: "&7▪ {currency}"
+  preview-extra: "&7▪ &fextra rewards"
+  preview-empty: "&7▪ nothing"

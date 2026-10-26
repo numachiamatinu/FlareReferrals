@@ -62,6 +62,7 @@ public final class ReferralRewardsMenu extends LayoutMenu {
                     "%amount%", String.valueOf(set.items().size() - 4)), viewer));
         }
         for (Map.Entry<String, Double> en : set.currencies().entrySet()) {
+            if (plugin.currencies().get(en.getKey()) == null && !admin()) continue; // turned off: not given
             out.add(Text.item(Text.replace(fmt, "%text%", plugin.currencies().display(en.getKey(), en.getValue())), viewer));
         }
         if (admin() && !set.commands().isEmpty()) {
@@ -86,6 +87,7 @@ public final class ReferralRewardsMenu extends LayoutMenu {
         if (e.isRightClick()) {
             set.enabled(!set.enabled());
             plugin.rewards().save();
+            if (set.enabled()) plugin.referrals().rewardTurnedOn(set); // what waited while it was off
             refresh();
         } else {
             new RewardSetMenu(plugin, viewer, set, this).openLater();

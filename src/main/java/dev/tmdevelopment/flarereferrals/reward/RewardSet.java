@@ -20,6 +20,10 @@ public class RewardSet {
     private final List<String> messages = new ArrayList<>();
     private final List<String> broadcast = new ArrayList<>();
     private Display display = new Display();
+    /** Network only: servers where this reward can be given ("all" = every server). */
+    private final List<String> servers = new ArrayList<>(java.util.Collections.singletonList("all"));
+    /** default = config.yml rewards.collect-menu, menu = waits in /referrals collect, auto = given right away. */
+    private String delivery = "default";
 
     public RewardSet(String id) {
         this.id = id;
@@ -58,11 +62,22 @@ public class RewardSet {
         messages.addAll(s.getStringList("messages"));
         broadcast.addAll(s.getStringList("broadcast"));
         display.load(s.getConfigurationSection("display"));
+        List<String> sv = new ArrayList<>();
+        if (s.isList("servers")) sv.addAll(s.getStringList("servers"));
+        else if (s.isString("servers")) sv.add(s.getString("servers"));
+        servers(sv);
+        delivery(s.getString("delivery", "default"));
     }
 
     public void save(ConfigurationSection s) {
         s.set("enabled", enabled);
-        s.set("items", new ArrayList<>(items));
+        // plain items stay short and readable ("DIAMOND:2"), items with name / lore / enchants are saved in full
+        List<Object> out = new ArrayList<>();
+        for (ItemStack it : items) {
+            if (it == null) continue;
+            out.add(it.hasItemMeta() ? it : it.getType().name() + ":" + it.getAmount());
+        }
+        s.set("items", out);
         s.set("currencies", null);
         ConfigurationSection cur = s.createSection("currencies");
         for (Map.Entry<String, Double> e : currencies.entrySet()) {
@@ -74,6 +89,8 @@ public class RewardSet {
         s.set("messages", new ArrayList<>(messages));
         s.set("broadcast", new ArrayList<>(broadcast));
         display.save(s.createSection("display"));
+        if (!allServers()) s.set("servers", new ArrayList<>(servers));
+        if (!delivery.equals("default")) s.set("delivery", delivery);
     }
 
     /** "DIAMOND:5" or "DIAMOND". */
@@ -101,4 +118,25 @@ public class RewardSet {
     public List<String> messages() { return messages; }
     public List<String> broadcast() { return broadcast; }
     public Display display() { return display; }
+    public List<String> servers() { return servers; }
+    public String delivery() { return delivery; }
+
+    public void delivery(String v) {
+        String t = v == null ? "default" : v.trim().toLowerCase(java.util.Locale.ROOT);
+        delivery = t.equals("menu") || t.equals("auto") ? t : "default";
+    }
+    public boolean allServers() { return servers.contains("all"); }
+
+    public void servers(List<String> list) {
+        servers.clear();
+        for (String v : list) {
+            if (v == null) continue;
+            String t = v.trim().toLowerCase(java.util.Locale.ROOT);
+            if (!t.isEmpty() && !servers.contains(t)) servers.add(t);
+        }
+        if (servers.isEmpty() || servers.contains("all")) {
+            servers.clear();
+            servers.add("all");
+        }
+    }
 }

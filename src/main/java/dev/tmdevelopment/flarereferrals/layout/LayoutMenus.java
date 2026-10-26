@@ -14,6 +14,7 @@ public final class LayoutMenus {
     private LayoutMenus() {}
 
     public static LayoutMenu create(FlareReferrals plugin, String id, Player viewer, Menu parent) {
-        return ("main".equals(id) ? new PlayerMenu(plugin, viewer) : "rewards".equals(id) ? new ReferralRewardsMenu(plugin, viewer, parent) : "top".equals(id) ? new TopMenu(plugin, viewer, parent) : "preview".equals(id) ? new PreviewMenu(plugin, viewer, plugin.rewards().invited(), parent) : null);
+        return ("main".equals(id) ? new PlayerMenu(plugin, viewer) : "rewards".equals(id) ? new ReferralRewardsMenu(plugin, viewer, parent) : "top".equals(id) ? new TopMenu(plugin, viewer, parent) : "preview".equals(id) ? new PreviewMenu(plugin, viewer, plugin.rewards().invited(), parent)
+                : "collect".equals(id) ? new dev.tmdevelopment.flarereferrals.gui.CollectMenu(plugin, viewer, parent) : null);
     }
 }

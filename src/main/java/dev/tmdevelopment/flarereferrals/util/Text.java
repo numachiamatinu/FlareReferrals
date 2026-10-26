@@ -81,11 +81,23 @@ public final class Text {
         if (papi && player != null && s.indexOf('%') >= 0) {
             s = PapiHook.apply(player, s);
         }
+        if (s.indexOf('1') >= 0) s = singular(s);
         try {
             return MM.deserialize(legacyToMini(s));
         } catch (Exception ex) {
             return Component.text(s);
         }
+    }
+
+    // "1 invites" -> "1 invite", also days / hours / minutes / seconds and "1 more minutes"
+    // (colors between the number and the word are allowed: "&e1 &7invites"; a hex color ending in 1 is not a number)
+    private static final String COL = "(?:&[0-9a-fk-orA-FK-OR]|&#[0-9a-fA-F]{6}|<[^<>]{1,40}>)";
+    private static final java.util.regex.Pattern ONE_INVITES = java.util.regex.Pattern.compile(
+            "(?<![0-9.,])(?<!&#[0-9a-fA-F]{5})1((?:\\s|" + COL + ")*\\s" + COL + "*(?:more\\s+" + COL + "*)?)"
+                    + "([Ii]nvite|[Dd]ay|[Hh]our|[Mm]inute|[Ss]econd)s\\b");
+
+    static String singular(String s) {
+        return ONE_INVITES.matcher(s).replaceAll("1$1$2");
     }
 
     /** Same as parse but without the default italic of item names / lore. */

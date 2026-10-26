@@ -9,8 +9,8 @@ softdepend: [PlaceholderAPI, Vault]
 commands:
   referrals:
     description: FlareReferrals main command
-    aliases: [freferrals, fref, freferral]
-    usage: /referrals <player|info|menu|rewards|top|milestone>
+    aliases: [freferrals, fref, freferral, referral]
+    usage: /referrals <player|info|menu|collect|rewards|top|milestone|version>
 
 permissions:
   flarereferrals.use:
@@ -31,6 +31,9 @@ permissions:
   flarereferrals.preview:
     description: See what a milestone gives (also needs player-access.preview)
     default: true
+  flarereferrals.collect:
+    description: /referrals collect (also needs player-access.collect)
+    default: true
   flarereferrals.info.others:
     description: See the referral info of other players
     default: op
@@ -39,6 +42,10 @@ permissions:
     default: op
     children:
       flarereferrals.info.others: true
+      flarereferrals.command.version: true
+  flarereferrals.command.version:
+    description: /referrals version - plugin version and update check
+    default: op
   flarereferrals.bypass:
-    description: Bypass playtime and same-IP checks
+    description: Bypass the playtime, time limit and same-IP checks
     default: op

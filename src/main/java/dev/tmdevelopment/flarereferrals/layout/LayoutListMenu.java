@@ -15,7 +15,7 @@ import java.util.Map;
 public final class LayoutListMenu extends Menu {
 
     private static final Map<String, Material> ICONS = dev.tmdevelopment.flarereferrals.util.J8.map(
-            "main", Material.CHEST, "rewards", Material.EMERALD, "top", Material.KNOWLEDGE_BOOK, "preview", Material.ENDER_EYE);
+            "main", Material.CHEST, "rewards", Material.EMERALD, "top", Material.KNOWLEDGE_BOOK, "preview", Material.ENDER_EYE, "collect", Material.CHEST_MINECART);
 
     private final Menu parent;
 
@@ -29,7 +29,7 @@ public final class LayoutListMenu extends Menu {
 
     @Override
     protected void build() {
-        int[] slots = {10, 12, 14, 16};
+        int[] slots = {11, 12, 13, 14, 15};
         int i = 0;
         for (String id : LayoutManager.IDS) {
             MenuLayout layout = plugin.layouts().get(id);

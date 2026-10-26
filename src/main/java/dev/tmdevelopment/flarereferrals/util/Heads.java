@@ -56,7 +56,7 @@ public final class Heads {
                     op = null;
                 }
                 final org.bukkit.OfflinePlayer found = op;
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(found == null ? null : of(found)));
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(found == null ? null : named(found)));
             });
             return;
         }
@@ -94,8 +94,8 @@ public final class Heads {
         return new ItemStack(Material.PLAYER_HEAD);
     }
 
-    /** Head of a player (skin loaded by the server). */
-    public static ItemStack of(org.bukkit.OfflinePlayer player) {
+    /** Head chosen by name in a file or in the editor (e.g. head:Notch): the skin is looked up by the server. */
+    private static ItemStack named(org.bukkit.OfflinePlayer player) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = head.getItemMeta();
         if (meta instanceof SkullMeta) {
@@ -103,6 +103,50 @@ public final class Heads {
             head.setItemMeta(meta);
         }
         return head;
+    }
+
+    /** Head of a player of this server (skin loaded by the server). */
+    public static ItemStack of(org.bukkit.OfflinePlayer player) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        ItemMeta meta = head.getItemMeta();
+        if (meta instanceof SkullMeta && player != null) {
+            setOwner((SkullMeta) meta, player);
+            head.setItemMeta(meta);
+        }
+        return head;
+    }
+
+    /**
+     * Sets the owner of a head. Offline-mode players (name-based UUID, no proxy in front) have no Mojang account:
+     * asking Mojang for them only fails with a warning in the console. For them the skin already loaded on the
+     * server is used (for example by SkinsRestorer), otherwise the head stays plain.
+     */
+    public static void setOwner(SkullMeta meta, org.bukkit.OfflinePlayer player) {
+        if (player.getUniqueId().version() != 3) {
+            meta.setOwningPlayer(player);
+            return;
+        }
+        org.bukkit.entity.Player online = player.getPlayer();
+        if (online == null) return;
+        try {
+            // Paper: the profile of the online player, with the skin if the server has one
+            Object profile = online.getClass().getMethod("getPlayerProfile").invoke(online);
+            java.util.Collection<?> props = (java.util.Collection<?>) profile.getClass().getMethod("getProperties").invoke(profile);
+            boolean skin = false;
+            for (Object p : props) {
+                if ("textures".equals(p.getClass().getMethod("getName").invoke(p))) skin = true;
+            }
+            if (!skin) return;
+            for (java.lang.reflect.Method m : meta.getClass().getMethods()) {
+                if (m.getName().equals("setPlayerProfile") && m.getParameterCount() == 1
+                        && m.getParameterTypes()[0].isInstance(profile)) {
+                    m.invoke(meta, profile);
+                    return;
+                }
+            }
+        } catch (Throwable ignored) {
+            // Spigot: plain head
+        }
     }
 
     @SuppressWarnings("deprecation")

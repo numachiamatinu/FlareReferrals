@@ -16,7 +16,7 @@ import java.util.Map;
 public final class LayoutManager {
 
     /** Customizable menus, in the order shown in the admin list. */
-    public static final List<String> IDS = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview");
+    public static final List<String> IDS = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview", "collect");
 
     private final FlareReferrals plugin;
     private final File dir;
@@ -36,14 +36,17 @@ public final class LayoutManager {
             dev.tmdevelopment.flarereferrals.util.Headers.sync(plugin, f, "menus/" + id + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(f);
             YamlConfiguration def = defaults(id);
-            boolean updated = dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, yml, def, "menus/" + id + ".yml");
-            updated |= dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(yml);
+            // old command name first, then old default texts -> new ones (edited texts are kept)
+            boolean updated = dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(yml);
+            updated |= dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, yml, def, "menus/" + id + ".yml");
             MenuLayout layout = new MenuLayout(id);
             layout.load(yml, def);
             layouts.put(id, layout);
-            if (completeFile(layout, def) | updated) {
+            boolean completed = completeFile(layout, def);
+            if (completed || updated) {
                 save(id);
-                plugin.getLogger().info("menus/" + id + ".yml: added material / name / lore of every item so you can edit them.");
+                if (completed) plugin.getLogger().info("menus/" + id + ".yml: added material / name / lore of every item so you can edit them.");
+                else plugin.getLogger().info("menus/" + id + ".yml: texts you never edited updated to the new version.");
             }
         }
     }

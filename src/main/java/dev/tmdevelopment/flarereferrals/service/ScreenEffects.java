@@ -17,6 +17,16 @@ public final class ScreenEffects {
 
     private ScreenEffects() {}
 
+    /** Boss bars on screen right now (removed on disable, /reload included). */
+    private static final java.util.Set<BossBar> BARS = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<BossBar, Boolean>());
+
+    public static void clear() {
+        for (BossBar bar : new java.util.ArrayList<>(BARS)) {
+            try { bar.removeAll(); } catch (RuntimeException ignored) { }
+        }
+        BARS.clear();
+    }
+
     public static void show(FlareReferrals plugin, Player p, Display d, String... placeholders) {
         if (d == null || !d.any()) return;
         String prefix = plugin.lang().prefix();
@@ -33,6 +43,7 @@ public final class ScreenEffects {
                     color(d.bossbarColor()), style(d.bossbarStyle()));
             bar.setProgress(1.0);
             bar.addPlayer(p);
+            BARS.add(bar);
             final int total = Math.max(1, d.bossbarSeconds() * 20);
             final int[] left = {total};
             final BukkitTask[] task = new BukkitTask[1];
@@ -40,6 +51,7 @@ public final class ScreenEffects {
                 left[0] -= 2;
                 if (left[0] <= 0 || !p.isOnline()) {
                     bar.removeAll();
+                    BARS.remove(bar);
                     if (task[0] != null) task[0].cancel();
                     return;
                 }
