@@ -32,7 +32,7 @@ help:
     rewards: " &#ff7a6b/{label} rewards &7- inviter and welcome rewards"
     top: " &#ff7a6b/{label} top &7- top inviters"
     milestone: " &#ff7a6b/{label} milestone <n> &7- rewards of a milestone"
-    version: " &#ff7a6b/{label} version &7- version and updates"
+    version: " &#ff7a6b/{label} about &7- version, updates and permissions"
   footer: ""
   # admins only (permission flarereferrals.admin)
   admin:
@@ -43,6 +43,7 @@ help:
     - " <click:suggest_command:'/{label} admin resetclaimed '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} admin resetclaimed <player></hover></click> &7- forget received milestones"
     - " &#ff7a6b/{label} settings &7- admin menu"
     - " &#ff7a6b/{label} layout &7- edit the menus"
+    - " &#ff7a6b/{label} layout add <name> &7- new menu from a chest"
     - " &#ff7a6b/{label} reload &7- reload the files"
     - " <click:suggest_command:'/{label} migrate '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data"
 
@@ -129,12 +130,15 @@ top:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>TOP INVITERS</bold></gradient>"
     - ""
+  # PlaceholderAPI placeholders are of the player of the line: " &#ff7a6b#{position} %luckperms_prefix%&f{player} ..."
   line: " &#ff7a6b#{position} &f{player} &7- &7{invites} invites"
   empty: " &7Nobody has invited anyone yet."
   footer: ""
 
 admin:
   reloaded: "{prefix}&aConfig, rewards and messages reloaded."
+  # a file with a mistake is never overwritten. {file} {line} {column} {problem}
+  file-error: "{prefix}&c{file} &7has a mistake around line &f{line}&7: &f{problem}&7. It was not changed: fix it and reload (until then the last working values are used)."
   milestone-created: "{prefix}&aMilestone &f{amount} invites &acreated."
   milestone-deleted: "{prefix}&cMilestone &f{amount} invites &cdeleted."
   milestone-exists: "{prefix}&cA milestone for &f{amount} &cinvites already exists."
@@ -179,6 +183,9 @@ admin:
     - " &7• &7Close the menu to &asave"
     - ""
   layout-saved: "{prefix}&aLayout of &f{menu} &asaved."
+  # the menu was changed while the editor was open (import, reset, reload): the new layout stays
+  layout-changed: "{prefix}&cLayout of &f{menu} &cnot saved: the menu was changed meanwhile (import, reset or reload). Your items are back in your inventory."
+  layout-not-saved: "{prefix}&cLayout of &f{menu} &cnot saved: menus/{menu}.yml has a mistake (see the console). Fix it and use /referrals reload."
   menu-enabled: "{prefix}&aMenu &f{menu} &aturned on."
   menu-disabled: "{prefix}&cMenu &f{menu} &cturned off&7: its commands and the buttons to it are gone."
   layout-admin-only-on: "{prefix}&cAdmin only&7: normal players won't see this item."
@@ -254,19 +261,90 @@ input:
   display-actionbar: " &7New &faction bar &7text (above the hotbar):"
   display-bossbar: " &7New &fboss bar &7text (top of the screen):"
 
-# /referrals version (or ver). {version} {minecraft} {software} {java} {storage} {network}
-version:
-  info:
-    - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7v{version}"
+# /referrals about (also version / ver). {version} {latest} {url} {label}
+about:
+  header:
     - ""
-    - " &7Minecraft: &f{minecraft} &8| &7Server: &f{software} &8| &7Java: &f{java}"
-    - " &7Storage: &f{storage}{network}"
-  # added to {network} when network mode is on
-  network: " &8| &7Network: &f{server}"
+    - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient>"
   checking: " &7Checking for updates..."
-  latest: " &aYou are using the latest version."
-  update: " &#ff7a6bVersion &f{latest} &#ff7a6bis out! <click:open_url:'{url}'><hover:show_text:'&7Open the download page'>&#ff7a6b&n[Download]</hover></click>"
-  failed: " &7Could not check for updates right now, try again later."
+  # first line, depends on the update check
+  latest: " &7Plugin version: &a{version} &8- &alatest version!"
+  outdated: " &7Plugin version: &c{version} &8- &c&lOUTDATED! &7Please update to &#ff7a6b{latest} <click:open_url:'{url}'><hover:show_text:'&7Click to open the download page'>&#ff7a6b&n[Download]</hover></click>"
+  failed: " &7Plugin version: &f{version} &8- &7could not check for updates right now"
+  check-off: " &7Plugin version: &f{version} &8- &7update check is off"
+  # {minecraft} {server} {java} {storage} {network} {notifier} {hooks}
+  info:
+    - " &7Server version: &f{minecraft} &8({server})"
+    - " &7Java: &f{java} &8| &7Storage: &f{storage}{network}"
+    - " &7Update notifier: {notifier}"
+    - " &7Plugin hooks: {hooks}"
+    - " &7Permissions: <click:run_command:'/{label} about permissions'><hover:show_text:'&7Click to see every permission'>&#ff7a6b&n[Show list]</hover></click>"
+  # added to {network} when network mode is on. {server-name} = network.server-name of this server
+  network: " &8| &7Network: &f{server-name}"
+  notifier-on: "&atrue"
+  notifier-off: "&cfalse"
+  # {hook} = name of the plugin; hooked = installed and in use, missing = not installed
+  hooked: "&a{hook}"
+  missing: "&8{hook}"
+  separator: "&7, "
+  permissions:
+    header:
+      - ""
+      - " <gradient:#ff5f6d:#ffc371><bold>FLARE REFERRALS</bold></gradient> &7permissions"
+    line: " <click:copy_to_clipboard:'{permission}'><hover:show_text:'&7Click to copy'>&#ff7a6b{permission}</hover></click> &8- &7{description} &8({default})"
+    # who has it without a permissions plugin
+    everyone: "everyone"
+    op: "op"
+    not-op: "not op"
+    nobody: "nobody"
+
+# Chest builder: /referrals layout add | import | chest | remove | list   (admins)
+builder:
+  usage:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>CHEST BUILDER</bold></gradient> &7- build a menu in a chest, look at it and type:"
+    - " &#ff7a6b/{label} layout add <name> &7- new menu, opened with /<name>"
+    - " &#ff7a6b/{label} layout import <menu> &7- the chest replaces the items of a menu"
+    - " &#ff7a6b/{label} layout chest <menu> &7- puts a menu in the empty chest"
+    - " &#ff7a6b/{label} layout remove <name> &7- deletes a menu made with add"
+    - " &#ff7a6b/{label} layout list &7- every menu"
+    - " &7Actions in the lore: &f[close] [open] <menu> [player] <cmd> [console] <cmd> [message] <text>..."
+    - " &7Options: &f[left] [right] [permission] <node> [admin-only] [update] [button] <id>"
+  no-container: "{prefix}&cLook at a chest, double chest, barrel or shulker box (at most 5 blocks away)."
+  unsupported: "{prefix}&cA &f{block} &ccan't be used: use a chest, double chest, trapped chest, barrel or shulker box."
+  empty: "{prefix}&cThe chest is empty: put the items of the menu in it first."
+  not-empty: "{prefix}&cThe chest must be empty: the menu &f{menu} &cis put in it."
+  too-small: "{prefix}&cThe menu &f{menu} &chas &f{rows} &crows: use a double chest."
+  bad-name: "{prefix}&cMenu names use only a-z, 0-9 and -, at most 32 characters (not add, import, chest, remove, list)."
+  reserved: "{prefix}&f{name} &cis used by the plugin: pick another name (menus of the plugin change with &f/{label} layout import <menu>&c)."
+  exists: "{prefix}&cThe menu &f{name} &calready exists: use &f/{label} layout import {name}&c, or remove it first."
+  command-taken: "{prefix}&c/{name} is already a command of &f{plugin}&c: pick another name."
+  unknown: "{prefix}&cThere is no menu called &f{menu}&c. Menus: &f{menus}"
+  not-custom: "{prefix}&f{menu} &cis a menu of the plugin and can't be deleted. Reset it in &f/{label} settings &c> Menu layouts."
+  created: "{prefix}&aMenu &f{menu} &acreated: players open it with &f/{menu}&a."
+  imported: "{prefix}&aMenu &f{menu} &aupdated from the chest."
+  # {rows} {items} {actions} {buttons} {file}
+  summary:
+    - " &7{rows} rows &8· &7{items} items &8· &7{actions} actions &8· &7{buttons} buttons"
+    - " &7Saved in &f{file}"
+  backup: " &7Old file saved in &fbackups/{file}"
+  warn-unknown-button: " &#ffc371⚠ &7[button] &f{button} &7doesn't exist in this menu (slot {slot}). Buttons: &f{buttons}"
+  warn-unknown-action: " &#ffc371⚠ &7Unknown action &f{action} &7(slot {slot}): it does nothing."
+  warn-covered: " &#ffc371⚠ &7{amount} items are under plugin buttons and are not shown (slots {slots})."
+  warn-outside: " &#ffc371⚠ &7The buttons &f{buttons} &7are outside the {rows} rows and are not shown."
+  warn-removed: " &#ffc371⚠ &7Taken out of the chest, so removed from the menu: &f{buttons}"
+  exported: "{prefix}&aMenu &f{menu} &aput in the chest &7({items} items)&a. Change it, then &f/{label} layout import {menu}&a."
+  exported-rows: " &7The menu has {rows} rows, the chest {chest}: the import keeps {rows} rows."
+  remove-confirm: "{prefix}&7Delete the menu &f{menu}&7? <click:run_command:'/{label} layout remove {menu} confirm'><hover:show_text:'&7Click to delete it'>&c&n[Delete]</hover></click> &8(a copy goes in backups/)"
+  removed: "{prefix}&aMenu &f{menu} &adeleted. A copy is in &fbackups/{file}&a."
+  remove-failed: "{prefix}&cCould not delete menus/{menu}.yml, see the console."
+  list-header:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>MENUS</bold></gradient> &7- click one to edit it"
+  list-line: " <click:run_command:'/{label} layout {menu}'><hover:show_text:'&7Click to edit it'>&#ff7a6b{menu}</hover></click> &8- &7{rows} rows, {type}{state}"
+  type-plugin: "menu of the plugin"
+  type-custom: "chest builder &8({commands}&8)"
+  disabled: " &c(off)"
 
 # New version message for admins when they join (update-check in config.yml). {version} {latest} {url}
 update:

@@ -32,6 +32,11 @@ public final class Headers {
         if (header.isEmpty()) return;
         try {
             String text = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            try {
+                new org.bukkit.configuration.file.YamlConfiguration().loadFromString(text);
+            } catch (Exception broken) {
+                return; // a file with a mistake is never touched (the mistake is reported when it is loaded)
+            }
             String[] parts = split(text);
             if (parts[0].equals(header)) return;
             dev.tmdevelopment.flarereferrals.util.J8.write(file.toPath(), header + parts[1], StandardCharsets.UTF_8);

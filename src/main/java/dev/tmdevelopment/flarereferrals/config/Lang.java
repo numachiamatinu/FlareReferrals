@@ -24,6 +24,8 @@ public final class Lang {
 
     private final FlareReferrals plugin;
     private YamlConfiguration cfg = new YamlConfiguration();
+    /** True once a lang file was read without mistakes (a later file with a mistake keeps those texts). */
+    private boolean loadedOnce;
 
     public Lang(FlareReferrals plugin) {
         this.plugin = plugin;
@@ -44,11 +46,17 @@ public final class Lang {
             file = new File(dir, "en.yml");
         }
         dev.tmdevelopment.flarereferrals.util.Headers.sync(plugin, file, "lang/en.yml");
-        cfg = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration loaded = dev.tmdevelopment.flarereferrals.util.SafeYaml.load(plugin, file, "lang/" + file.getName());
+        // a file with a mistake is never saved: the last working texts (or the defaults) are used
+        if (loaded == null && loadedOnce) return;
+        boolean broken = loaded == null;
+        if (!broken) loadedOnce = true;
+        cfg = broken ? new YamlConfiguration() : loaded;
         try (InputStream in = plugin.getResource("lang/en.yml")) {
             if (in != null) {
                 YamlConfiguration defaults = YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
                 cfg.setDefaults(defaults);
+                if (broken) return;
                 boolean changed = false;
                 // menu texts changed in a newer version: back up the file, then refresh menu + prompt texts.
                 // This replaces edited texts too: changed default texts go in text-updates.yml instead.

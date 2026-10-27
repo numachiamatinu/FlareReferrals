@@ -1,6 +1,21 @@
 # Internal: old default texts. When a server file still has one of these exactly, it is replaced
 # with the new default. Edited texts are never touched. Keys: file name with / and . written as _
 lang_en_yml:
+- path: builder.summary
+  old: ' &7{rows} rows &8· &7{items} items &8· &7{actions} actions &8· &7{buttons} buttons &8→ &f{file}'
+- path: help.admin
+  old:
+  - ' <click:suggest_command:''/{label} admin set ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin set <player> <n></hover></click> &7- set invites'
+  - ' <click:suggest_command:''/{label} admin add ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin add <player> <n></hover></click> &7- add invites'
+  - ' <click:suggest_command:''/{label} admin remove ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin remove <player> <n></hover></click> &7- remove invites'
+  - ' <click:suggest_command:''/{label} admin reset ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin reset <player></hover></click> &7- reset a player'
+  - ' <click:suggest_command:''/{label} admin resetclaimed ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} admin resetclaimed <player></hover></click> &7- forget received milestones'
+  - ' &#ff7a6b/{label} settings &7- admin menu'
+  - ' &#ff7a6b/{label} layout &7- edit the menus'
+  - ' &#ff7a6b/{label} reload &7- reload the files'
+  - ' <click:suggest_command:''/{label} migrate ''><hover:show_text:''&7Click to write it''>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data'
+- path: help.lines.version
+  old: ' &#ff7a6b/{label} version &7- version and updates'
 - path: prefix
   old: <gradient:#ff5f6d:#ffc371><bold>FLARES</bold></gradient> &7» &7
 - path: help.header
@@ -323,6 +338,30 @@ lang_en_yml:
   - ' <click:suggest_command:''/{label} migrate ''><hover:show_text:''&7Click to write it''>&e/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data (database, network)'
   - ''
 menus_admin_yml:
+- path: layout.help.lore
+  old:
+  - '&7Open a menu in edit mode and move'
+  - '&7everything like in a chest.'
+  - '&7Your own items (glass, custom heads'
+  - '&7from minecraft-heads.com...) become'
+  - '&7decorations. Closing saves.'
+  - ''
+  - '&7Click actions for decorations can be'
+  - '&7added in &fmenus/<menu>.yml&7.'
+- path: layout.elements.top
+  old: '&bTop button'
+- path: rewardset.preview.name
+  old: '&bPreview'
+- path: rewardset.screen.name
+  old: '&bTitle, action bar & boss bar'
+- path: rewardset.commands.name
+  old: '&dCommands &7({amount})'
+- path: rewardset.servers.name
+  old: '&bServers'
+- path: settings.layouts.name
+  old: '&dMenu layouts'
+- path: settings.top.name
+  old: '&bTop inviters'
 - path: settings.title
   old: <gradient:#ff5f6d:#ffc371>Flares Rewards</gradient> &7- Settings
 - path: settings.options.referral-enabled.lore
@@ -789,6 +828,8 @@ menus_collect_yml:
   - '&7Collect it on &f{servers}'
   - '&eRight-click &7to see everything'
 menus_main_yml:
+- path: elements.top.name
+  old: '&bTop inviters'
 - path: elements.head.lore
   old:
   - '&7Invites: &e{invites}'

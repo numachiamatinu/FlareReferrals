@@ -36,6 +36,11 @@ public abstract class LayoutMenu extends Menu {
 
     protected final String layoutId;
     protected boolean editMode = false;
+    /** Menu opened by [back] (the one this menu was opened from), or null. */
+    protected Menu backTo;
+    private org.bukkit.scheduler.BukkitTask updater;
+    /** Version of the layout when the editor was opened: changed meanwhile (import, reset...) = don't save over it. */
+    private int openedVersion = -1;
 
     protected LayoutMenu(FlareReferrals plugin, Player viewer, String layoutId) {
         super(plugin, viewer);
@@ -44,6 +49,27 @@ public abstract class LayoutMenu extends Menu {
             keyElement = new NamespacedKey(plugin, "layout_element");
             keyDeco = new NamespacedKey(plugin, "layout_deco");
         }
+        ItemCodec.init(plugin);
+    }
+
+    /** Menu opened by [back]. */
+    public LayoutMenu backTo(Menu parent) {
+        if (parent != null) this.backTo = parent;
+        return this;
+    }
+
+    public String layoutId() {
+        return layoutId;
+    }
+
+    /** True while the menu is open in the drag and drop editor. */
+    public boolean editing() {
+        return editMode;
+    }
+
+    /** Elements that fill many slots (milestones, top players...): one marker per slot in the editor and the chest. */
+    public java.util.Set<String> lists() {
+        return java.util.Collections.emptySet();
     }
 
     /** Opens this menu in edit mode. */
@@ -95,6 +121,7 @@ public abstract class LayoutMenu extends Menu {
         for (int i = 0; i < decos.size(); i++) {
             MenuLayout.Decoration d = decos.get(i);
             if (d.adminOnly && !editMode && !isAdmin()) continue; // players never see admin-only items
+            if (!editMode && d.permission != null && !d.permission.isEmpty() && !viewer.hasPermission(d.permission)) continue;
             ItemStack item = decorationItem(d);
             if (item == null) continue;
             if (editMode && d.adminOnly) item = markAdminOnly(item);
@@ -102,7 +129,7 @@ public abstract class LayoutMenu extends Menu {
             List<String> actions = d.actions;
             for (int slot : d.slots) {
                 if (slot >= rows() * 9) continue;
-                set(slot, item.clone(), editMode || actions.isEmpty() ? null : e -> runActions(actions));
+                set(slot, item.clone(), editMode || actions.isEmpty() ? null : e -> MenuActions.run(plugin, this, viewer, actions, e.getClick(), titlePlaceholders()));
             }
         }
     }
@@ -112,8 +139,11 @@ public abstract class LayoutMenu extends Menu {
         ItemStack base = ItemSpec.build(plugin, d.material, viewer);
         if (base == null) return null;
         ItemBuilder b = new ItemBuilder(base).hideFlags().glow(d.glow).amount(d.amount);
-        String name = d.name == null || d.name.isEmpty() ? " " : d.name.replace("{prefix}", lang().prefix());
-        b.name(Text.item(Text.replace(name, titlePlaceholders()), viewer));
+        // no name in the file = the Minecraft name of the item
+        if (d.name != null) {
+            String name = d.name.isEmpty() ? " " : d.name.replace("{prefix}", lang().prefix());
+            b.name(Text.item(Text.replace(name, titlePlaceholders()), viewer));
+        }
         if (d.lore != null) b.lore(Text.items(Text.replace(d.lore, titlePlaceholders()), viewer));
         if (d.customModelData != null) b.customModelData(d.customModelData);
         return b.build();
@@ -121,7 +151,9 @@ public abstract class LayoutMenu extends Menu {
 
     protected List<Integer> slots(String id) {
         List<Integer> out = new ArrayList<>();
-        for (int s : layout().element(id).slots) if (s < rows() * 9) out.add(s);
+        MenuLayout.Element e = layout().elements().get(id);
+        if (e == null) return out;
+        for (int s : e.slots) if (s < rows() * 9) out.add(s);
         return out;
     }
 
@@ -133,7 +165,8 @@ public abstract class LayoutMenu extends Menu {
      */
     protected void element(String id, ItemStack base, String langPath, List<Component> extraLore, boolean glow,
                            Consumer<InventoryClickEvent> action, String... placeholders) {
-        MenuLayout.Element e = layout().element(id);
+        MenuLayout.Element e = layout().elements().get(id);
+        if (e == null) return; // not in this menu (menus made with the chest builder have only some buttons)
         if (e.adminOnly && !editMode && !isAdmin()) return; // players never see admin-only buttons
         List<Integer> slots = slots(id);
         if (slots.isEmpty()) return;
@@ -191,7 +224,7 @@ public abstract class LayoutMenu extends Menu {
         List<Integer> slots = slots(id);
         if (editMode) {
             for (int i = 0; i < slots.size(); i++) {
-                set(slots.get(i), tag(new ItemBuilder(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
+                set(slots.get(i), tag(new ItemBuilder(Material.ORANGE_STAINED_GLASS_PANE)
                         .name(lang().item("gui.layout.list-slot.name", viewer,
                                 "%element%", elementName(id), "%number%", String.valueOf(i + 1)))
                         .lore(lang().lore("gui.layout.list-slot.lore", viewer))
@@ -232,43 +265,54 @@ public abstract class LayoutMenu extends Menu {
 
     // ---------------------------------------------------------------- actions
 
-    private void runActions(List<String> actions) {
-        for (String a : actions) {
-            String s = Text.replace(a.trim(), titlePlaceholders());
-            String low = s.toLowerCase();
-            if (low.startsWith("[close]")) {
-                viewer.closeInventory();
-            } else if (low.startsWith("[open]")) {
-                String id = s.substring(6).trim().toLowerCase();
-                String key = ("main".equals(id) ? "menu" : "top".equals(id) ? "topmenu" : id);
-                if (!plugin.checkOpen(viewer, key)) continue;
-                LayoutMenu m = LayoutMenus.create(plugin, id, viewer, this);
-                if (m != null) m.openLater();
-            } else if (low.startsWith("[player]")) {
-                String cmd = s.substring(8).trim();
-                if (cmd.startsWith("/")) cmd = cmd.substring(1);
-                viewer.performCommand(cmd);
-            } else if (low.startsWith("[console]")) {
-                String cmd = s.substring(9).trim();
-                if (cmd.startsWith("/")) cmd = cmd.substring(1);
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
-            } else if (low.startsWith("[message]")) {
-                dev.tmdevelopment.flarereferrals.util.Platform.send(viewer, Text.parse(s.substring(9).trim().replace("{prefix}", lang().prefix()), viewer));
-            } else if (low.startsWith("[sound]")) {
-                try {
-                    viewer.playSound(viewer.getLocation(), s.substring(7).trim().toLowerCase(), 1f, 1f);
-                } catch (Exception ignored) {
-                }
-            }
+    /** [open] &lt;menu&gt;: menus of the plugin and the ones made with the chest builder. */
+    public void openOther(String id) {
+        if (plugin.layouts().isCustom(id)) {
+            MenuLayout l = plugin.layouts().get(id);
+            if (!l.enabled() && !isAdmin()) return;
+            if (!l.openPermission().isEmpty() && !viewer.hasPermission(l.openPermission())) return;
+        } else {
+            String key = ("main".equals(id) ? "menu" : "top".equals(id) ? "topmenu" : id);
+            if (!plugin.checkOpen(viewer, key)) return;
         }
+        LayoutMenu m = LayoutMenus.create(plugin, id, viewer, this);
+        if (m != null) m.openLater();
+    }
+
+    /** [back]: the menu this one was opened from, or close. */
+    public void goBack() {
+        if (backTo == null) viewer.closeInventory();
+        else backTo.openLater();
     }
 
     // ---------------------------------------------------------------- edit mode events
 
     @Override
     public void open() {
+        if (editMode) openedVersion = plugin.layouts().version(layoutId);
         super.open();
-        if (editMode) lang().send(viewer, "admin.layout-editing", "%menu%", layoutId);
+        if (editMode) {
+            lang().send(viewer, "admin.layout-editing", "%menu%", layoutId);
+            return;
+        }
+        startUpdater();
+    }
+
+    /** Items with "update: true" ([update] in the chest builder) are drawn again every second while the menu is open. */
+    private void startUpdater() {
+        if (updater != null) updater.cancel();
+        updater = null;
+        boolean any = false;
+        for (MenuLayout.Decoration d : layout().decorations()) any |= d.update;
+        if (!any) return;
+        updater = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!isOpen()) {
+                if (updater != null) updater.cancel();
+                updater = null;
+                return;
+            }
+            refresh();
+        }, 20L, 20L);
     }
 
     @Override
@@ -293,18 +337,35 @@ public abstract class LayoutMenu extends Menu {
         if (raw >= 0 && raw < size && !emptySlot && e.isShiftClick() && e.isRightClick()) {
             // toggle "admin only" for the clicked button / decoration
             e.setCancelled(true);
-            saveFromInventory();
+            if (!saveFromInventory()) {
+                viewer.closeInventory();
+                return;
+            }
             MenuLayout layout = layout();
             Boolean now = null;
             for (MenuLayout.Element el : layout.elements().values()) {
                 if (el.slots.contains(raw)) { el.adminOnly = !el.adminOnly; now = el.adminOnly; break; }
             }
             if (now == null) {
-                for (MenuLayout.Decoration d : layout.decorations()) {
-                    if (d.slots.contains(raw)) { d.adminOnly = !d.adminOnly; now = d.adminOnly; break; }
+                for (int i = 0; i < layout.decorations().size(); i++) {
+                    MenuLayout.Decoration d = layout.decorations().get(i);
+                    if (!d.slots.contains(raw)) continue;
+                    if (d.slots.size() > 1) {
+                        // only the clicked slot changes: it becomes a decoration of its own
+                        MenuLayout.Decoration one = copyOf(d);
+                        one.origin = null;
+                        one.slots = new ArrayList<>(java.util.Collections.singletonList(raw));
+                        d.slots.remove(Integer.valueOf(raw));
+                        layout.decorations().add(i + 1, one);
+                        d = one;
+                    }
+                    d.adminOnly = !d.adminOnly;
+                    now = d.adminOnly;
+                    break;
                 }
             }
             plugin.layouts().save(layoutId);
+            openedVersion = plugin.layouts().version(layoutId);
             if (now != null) lang().send(viewer, now ? "admin.layout-admin-only-on" : "admin.layout-admin-only-off");
             refresh();
         }
@@ -318,8 +379,13 @@ public abstract class LayoutMenu extends Menu {
 
     @Override
     public void handleClose(InventoryCloseEvent e) {
-        if (!editMode) return;
-        saveFromInventory();
+        if (!editMode) {
+            if (updater != null) updater.cancel();
+            updater = null;
+            return;
+        }
+        boolean stale = openedVersion != plugin.layouts().version(layoutId);
+        boolean saved = saveFromInventory();
         // layout copies must not stay in the admin's inventory
         Inventory inv = viewer.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
@@ -327,12 +393,31 @@ public abstract class LayoutMenu extends Menu {
             if (isLayoutItem(it)) inv.setItem(i, null);
         }
         if (isLayoutItem(viewer.getItemOnCursor())) viewer.setItemOnCursor(null);
-        lang().send(viewer, "admin.layout-saved", "%menu%", layoutId);
+        if (saved) lang().send(viewer, "admin.layout-saved", "%menu%", layoutId);
+        else if (stale) lang().send(viewer, "admin.layout-changed", "%menu%", layoutId);
+        else lang().send(viewer, "admin.layout-not-saved", "%menu%", layoutId);
     }
 
-    private void saveFromInventory() {
+    /**
+     * Writes what is in the editor into the layout.
+     * @return false when nothing was saved: the menu was changed meanwhile (import, reset...) or its file has a mistake
+     */
+    private boolean saveFromInventory() {
         MenuLayout layout = layout();
         Inventory inv = getInventory();
+        if (openedVersion != plugin.layouts().version(layoutId)) {
+            // changed by an import / reset while this editor was open: the new layout stays, the admin's items come back
+            List<ItemStack> mine = new ArrayList<>();
+            for (int slot = 0; slot < inv.getSize(); slot++) {
+                ItemStack it = inv.getItem(slot);
+                if (it != null && !it.getType().isAir() && read(it, keyElement) == null && read(it, keyDeco) == null) {
+                    mine.add(it.clone());
+                    inv.setItem(slot, null);
+                }
+            }
+            giveBack(mine);
+            return false;
+        }
         List<MenuLayout.Decoration> oldDecos = new ArrayList<>(layout.decorations());
         Map<String, List<Integer>> newSlots = new LinkedHashMap<>();
         for (String id : layout.elements().keySet()) newSlots.put(id, new ArrayList<>());
@@ -371,11 +456,11 @@ public abstract class LayoutMenu extends Menu {
             // new item placed by the admin: written in a readable form (material, name, lore, glow,
             // actions) so it can be edited later in menus/<menu>.yml
             placed.add(it.clone());
-            MenuLayout.Decoration described = describe(it);
+            MenuLayout.Decoration described = ItemCodec.of(it);
             String key = keyOf(described);
             MenuLayout.Decoration target = null;
             for (MenuLayout.Decoration d : newDecos) {
-                if (d.origin == null && d.item == null && keyOf(d).equals(key)) target = d;
+                if (d.origin == null && keyOf(d).equals(key)) target = d;
             }
             if (target == null) {
                 target = described;
@@ -400,41 +485,24 @@ public abstract class LayoutMenu extends Menu {
             d.origin = null;
             layout.decorations().add(d);
         }
-        plugin.layouts().save(layoutId);
+        boolean ok = plugin.layouts().save(layoutId);
         // the menu keeps a decoration made from the item, the admin gets his item back
         for (int slot = 0; slot < size; slot++) {
             ItemStack it = inv.getItem(slot);
             if (it != null && !it.getType().isAir() && read(it, keyElement) == null && read(it, keyDeco) == null) inv.setItem(slot, null);
         }
         giveBack(placed);
+        return ok;
     }
 
     /** Turns any item into an editable decoration: material (heads keep their texture), name, lore, glow. */
     static MenuLayout.Decoration describe(ItemStack it) {
-        MenuLayout.Decoration d = new MenuLayout.Decoration();
         ItemMeta m = it.getItemMeta();
-        String material = it.getType().name();
-        if (m instanceof org.bukkit.inventory.meta.SkullMeta) {
-            String head = dev.tmdevelopment.flarereferrals.util.Compat.describeHead((org.bukkit.inventory.meta.SkullMeta) m);
-            if (head != null) material = head;
-        }
-        d.material = material;
-        d.name = m != null && m.hasDisplayName() ? dev.tmdevelopment.flarereferrals.util.Platform.toEditable(m.getDisplayName()) : " ";
-        d.lore = new ArrayList<>();
-        if (m != null && m.hasLore() && m.getLore() != null) for (String c : m.getLore()) d.lore.add(dev.tmdevelopment.flarereferrals.util.Platform.toEditable(c));
-        if (m != null) {
-            d.glow = dev.tmdevelopment.flarereferrals.util.Compat.hasGlow(m);
-            try {
-                if (m.hasCustomModelData()) d.customModelData = m.getCustomModelData();
-            } catch (Throwable ignored) {
-            }
-        }
-        d.amount = Math.max(1, it.getAmount());
-        return d;
+        return ItemCodec.describe(it, m != null && m.hasLore() && m.getLore() != null ? m.getLore() : new ArrayList<String>());
     }
 
     private static String keyOf(MenuLayout.Decoration d) {
-        return d.material + "|" + d.name + "|" + d.lore + "|" + d.glow + "|" + d.amount + "|" + d.customModelData + "|" + d.actions;
+        return ItemCodec.key(d);
     }
 
     private static MenuLayout.Decoration copyOf(MenuLayout.Decoration old) {
@@ -447,8 +515,99 @@ public abstract class LayoutMenu extends Menu {
         d.amount = old.amount;
         d.customModelData = old.customModelData;
         d.actions = new ArrayList<>(old.actions);
+        d.adminOnly = old.adminOnly;
+        d.permission = old.permission;
+        d.update = old.update;
         d.origin = old;
         return d;
+    }
+
+    // ---------------------------------------------------------------- chest builder
+
+    /**
+     * The menu as chest items ("layout chest"): decorations with their options and actions in the lore,
+     * plugin buttons with "[button] &lt;id&gt;". Placeholders are shown as they are written in the file.
+     */
+    public Map<Integer, ItemStack> chestItems() {
+        Map<Integer, ItemStack> out = new LinkedHashMap<>();
+        int rows = rows();
+        int size = rows * 9;
+        MenuLayout layout = layout();
+        for (MenuLayout.Decoration d : layout.decorations()) {
+            ItemStack item = chestItem(d);
+            if (item == null) continue;
+            item = ItemCodec.tagDecoration(item, d, rows);
+            for (int slot : d.slots) if (slot < size) out.put(slot, item.clone());
+        }
+        Map<String, Material> palette = palette();
+        for (Map.Entry<String, MenuLayout.Element> en : layout.elements().entrySet()) {
+            String id = en.getKey();
+            MenuLayout.Element e = en.getValue();
+            boolean list = lists().contains(id);
+            int n = 0;
+            for (int slot : e.slots) {
+                if (slot >= size) continue;
+                n++;
+                Material icon = palette.get(id) == null ? Material.STONE : palette.get(id);
+                out.put(slot, ItemCodec.tagButton(buttonItem(id, e, icon, list ? n : 0), id, rows));
+            }
+        }
+        return out;
+    }
+
+    private ItemStack buttonItem(String id, MenuLayout.Element e, Material icon, int listNumber) {
+        ItemStack base = e.material == null || listNumber > 0 ? null : ItemSpec.build(plugin, e.material, viewer);
+        if (base == null) base = new ItemStack(icon);
+        ItemBuilder b = new ItemBuilder(base).hideFlags();
+        if (listNumber > 0) {
+            b.name(lang().item("gui.layout.list-slot.name", viewer, "%element%", elementName(id), "%number%", String.valueOf(listNumber)));
+            b.amount(Math.min(64, listNumber));
+        } else {
+            b.name(Text.itemAbout(e.name != null ? e.name.replace("{prefix}", lang().prefix()) : elementName(id), null));
+            if (e.lore != null) b.lore(Text.itemsAbout(e.lore, null));
+            if (Boolean.TRUE.equals(e.glow)) b.glow(true);
+            if (e.customModelData != null) b.customModelData(e.customModelData);
+        }
+        List<String> extra = new ArrayList<>();
+        extra.add("");
+        extra.add("[button] " + id);
+        return withLines(b.build(), extra);
+    }
+
+    private ItemStack chestItem(MenuLayout.Decoration d) {
+        ItemStack item;
+        if (d.item != null) {
+            item = d.item.clone();
+        } else {
+            ItemStack base = ItemSpec.build(plugin, d.material, viewer);
+            if (base == null) return null;
+            ItemBuilder b = new ItemBuilder(base).hideFlags().glow(d.glow).amount(d.amount);
+            if (d.name != null) b.name(Text.itemAbout(d.name.isEmpty() ? " " : d.name.replace("{prefix}", lang().prefix()), null));
+            if (d.lore != null) b.lore(Text.itemsAbout(d.lore, null));
+            if (d.customModelData != null) b.customModelData(d.customModelData);
+            item = b.build();
+        }
+        // a text line that starts with [ gets a \ so it is not read as an action
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasLore() && meta.getLore() != null) {
+            List<String> lore = new ArrayList<>();
+            for (String l : meta.getLore()) lore.add(ItemCodec.escapeLegacy(l));
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return withLines(item, ItemCodec.optionLines(d));
+    }
+
+    /** Adds gray lines (options, actions, [button]) at the end of the lore, written as they are. */
+    private static ItemStack withLines(ItemStack item, List<String> lines) {
+        if (lines.isEmpty()) return item;
+        ItemMeta m = item.getItemMeta();
+        if (m == null) return item;
+        List<String> lore = m.hasLore() && m.getLore() != null ? new ArrayList<>(m.getLore()) : new ArrayList<String>();
+        for (String l : lines) lore.add(l.isEmpty() ? "" : "\u00a78" + l);
+        m.setLore(lore);
+        item.setItemMeta(m);
+        return item;
     }
 
     // ---------------------------------------------------------------- tags

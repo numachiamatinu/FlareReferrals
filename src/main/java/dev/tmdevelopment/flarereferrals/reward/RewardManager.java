@@ -27,7 +27,9 @@ public final class RewardManager {
     public void load() {
         if (!file.exists()) plugin.saveResource("rewards.yml", false);
         dev.tmdevelopment.flarereferrals.util.Headers.sync(plugin, file, "rewards.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration yml = dev.tmdevelopment.flarereferrals.util.SafeYaml.load(plugin, file, "rewards.yml");
+        // a file with a mistake is never saved: the rewards loaded before stay (none at startup)
+        if (yml == null) return;
         boolean renamed = dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(yml);
         inviter.load(yml.getConfigurationSection("referral.inviter"));
         invited.load(yml.getConfigurationSection("referral.invited"));
@@ -52,6 +54,10 @@ public final class RewardManager {
     }
 
     public void save() {
+        if (dev.tmdevelopment.flarereferrals.util.SafeYaml.broken("rewards.yml")) {
+            plugin.getLogger().warning("rewards.yml was not saved because it has a mistake: fix it and use /referrals reload.");
+            return;
+        }
         YamlConfiguration yml = new YamlConfiguration();
 
         inviter.save(yml.createSection("referral.inviter"));

@@ -120,12 +120,14 @@ public final class ReferralService {
             targetReal = t.getName() == null ? targetName : t.getName();
         }
         if (targetId.equals(userId)) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (himself)");
             lang().send(user, "referral.self");
             sound(user, "error");
             return;
         }
         boolean circular = cfg.getBoolean("referral.prevent-circular", true);
         if (circular && targetData != null && userId.equals(targetData.referredBy())) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (circular: " + targetReal + " was invited by him)");
             lang().send(user, "referral.circular", "%player%", targetReal);
             sound(user, "error");
             return;
@@ -135,6 +137,7 @@ public final class ReferralService {
         int played = playtimeMinutes(user, userData);
         int minMinutes = cfg.getInt("referral.min-playtime-minutes", 0);
         if (!bypass && minMinutes > 0 && played < minMinutes) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (playtime " + played + "/" + minMinutes + " min)");
             lang().send(user, "referral.need-playtime",
                     "%required%", String.valueOf(minMinutes), "%played%", String.valueOf(played));
             sound(user, "error");
@@ -143,6 +146,7 @@ public final class ReferralService {
         int maxDays = cfg.getInt("referral.max-days-after-first-join", 0);
         long first = firstSeen(user, userData);
         if (!bypass && maxDays > 0 && first > 0 && System.currentTimeMillis() - first > maxDays * 86_400_000L) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (more than " + maxDays + " days after the first join)");
             lang().send(user, "referral.too-late", "%days%", String.valueOf(maxDays));
             sound(user, "error");
             return;
@@ -153,8 +157,17 @@ public final class ReferralService {
         Player targetOnline = Bukkit.getPlayer(targetId);
         final String targetIpNow = targetOnline != null ? ipHash(targetOnline) : null;
         if (sameIp && myIp != null && (myIp.equals(targetIpNow) || (targetData != null && myIp.equals(targetData.ipHash())))) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (same IP)");
             lang().send(user, "referral.same-ip", "%player%", targetReal);
             sound(user, "error");
+            return;
+        }
+
+        // other plugins can block the invite (they tell the player why)
+        dev.tmdevelopment.flarereferrals.api.ReferralEvent event = new dev.tmdevelopment.flarereferrals.api.ReferralEvent(user, targetId, targetReal);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", user.getName() + " -> " + targetReal + " (cancelled by another plugin)");
             return;
         }
 
@@ -193,19 +206,23 @@ public final class ReferralService {
                     if (d != null) alreadyReferred(u, d);
                     break;
                 case CIRCULAR:
+                    dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", userName + " -> " + targetReal + " (circular)");
                     lang().send(u, "referral.circular", "%player%", targetReal);
                     sound(u, "error");
                     break;
                 case SAME_IP:
+                    dev.tmdevelopment.flarereferrals.util.ReferralLog.log("BLOCKED", userName + " -> " + targetReal + " (same IP)");
                     lang().send(u, "referral.same-ip", "%player%", targetReal);
                     sound(u, "error");
                     break;
                 case OK_PENDING:
+                    dev.tmdevelopment.flarereferrals.util.ReferralLog.log("PENDING", userName + " -> " + targetReal + " (counts after " + verifyMin + " min of play)");
                     lang().send(u, "referral.pending", "%player%", targetReal,
                             "%minutes%", String.valueOf(Math.max(1, verifyMin - played)));
                     sound(u, "success");
                     break;
                 default:
+                    dev.tmdevelopment.flarereferrals.util.ReferralLog.log("INVITE", userName + " -> " + targetReal + " (" + targetReal + " has " + out.invites + " invites)");
                     lang().send(u, "referral.success", "%player%", targetReal);
                     sound(u, "success");
                     completed(userId, userName, targetId, targetReal, out);
@@ -265,6 +282,14 @@ public final class ReferralService {
 
     /** Messages + rewards after an invite counted (also after a verification). */
     private void completed(UUID userId, String userName, UUID targetId, String targetReal, Outcome out) {
+        try {
+            Bukkit.getPluginManager().callEvent(new dev.tmdevelopment.flarereferrals.api.ReferralCompleteEvent(
+                    userId, userName, targetId, targetReal, out.invites));
+        } catch (Throwable t) {
+            plugin.getLogger().warning("A plugin listening to ReferralCompleteEvent failed: " + t);
+        }
+        refreshMenu(userId);
+        refreshMenu(targetId);
         Player u = Bukkit.getPlayer(userId);
         if (u != null) deliverPending(u, false);
         notifyCollect(userId, out.readyUser, false); // "success" sound already played
@@ -303,6 +328,7 @@ public final class ReferralService {
         }, out -> {
             busy.remove(userId);
             if (out == null || out.code != OK) return;
+            dev.tmdevelopment.flarereferrals.util.ReferralLog.log("INVITE", userName + " -> " + targetReal + " (after the playtime check, " + targetReal + " has " + out.invites + " invites)");
             Player u = Bukkit.getPlayer(userId);
             if (u != null) {
                 lang().send(u, "referral.verified", "%player%", targetReal);
@@ -794,6 +820,9 @@ public final class ReferralService {
         }
         ScreenEffects.show(plugin, p, set.display(), ph);
         sound(p, "reward");
+        String what = set instanceof Milestone ? "milestone " + milestone : parts[0].startsWith("referral:inviter") ? "inviter reward"
+                : parts[0].startsWith("referral:invited") ? "welcome reward" : parts[0];
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (invited.isEmpty() || set instanceof Milestone ? "" : " (" + inviter + " <- " + invited + ")"));
     }
 
     // ------------------------------------------------------------------ network
@@ -824,6 +853,21 @@ public final class ReferralService {
         if (p == null) return;
         deliverPending(p, false);
         checkVerify(p);
+        refreshMenu(uuid);
+    }
+
+    /**
+     * The invites or the rewards of a player changed: the FlareReferrals menu he has open shows it at once
+     * (progress, milestones, rewards to collect). Main thread only.
+     */
+    public void refreshMenu(UUID uuid) {
+        Player p = uuid == null ? null : Bukkit.getPlayer(uuid);
+        if (p == null) return;
+        Object holder = dev.tmdevelopment.flarereferrals.gui.Menu.openFor(p);
+        if (holder instanceof dev.tmdevelopment.flarereferrals.layout.LayoutMenu) {
+            dev.tmdevelopment.flarereferrals.layout.LayoutMenu m = (dev.tmdevelopment.flarereferrals.layout.LayoutMenu) holder;
+            if (!m.editing()) m.refresh();
+        }
     }
 
     /** Message from another server. */

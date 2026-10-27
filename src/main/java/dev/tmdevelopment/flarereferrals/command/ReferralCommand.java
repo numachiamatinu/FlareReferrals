@@ -27,7 +27,7 @@ import java.util.Set;
 public final class ReferralCommand implements TabExecutor {
 
     private static final Set<String> SUBS = new java.util.HashSet<>(java.util.Arrays.asList("info", "menu", "rewards",
-            "top", "milestone", "milestones", "claim", "settings", "reload", "admin", "help", "cancel", "layout", "layouts", "migrate", "collect", "version", "ver"));
+            "top", "milestone", "milestones", "claim", "settings", "reload", "admin", "help", "cancel", "layout", "layouts", "migrate", "collect", "version", "ver", "about"));
 
     private final FlareReferrals plugin;
 
@@ -146,10 +146,14 @@ public final class ReferralCommand implements TabExecutor {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
                 boolean restart = plugin.reloadAll();
                 lang().send(sender, "admin.reloaded");
+                // files with a mistake: never overwritten, the owner is told where the mistake is
+                for (String[] pr : dev.tmdevelopment.flarereferrals.util.SafeYaml.problems()) {
+                    lang().send(sender, "admin.file-error", "%file%", pr[0], "%line%", pr[1], "%column%", pr[2], "%problem%", pr[3]);
+                }
                 if (restart) lang().send(sender, "admin.restart-needed");
             }
         else if ("admin".equals(sub)) { admin(sender, label, args); }
-        else if ("version".equals(sub) || "ver".equals(sub)) { version(sender); }
+        else if ("about".equals(sub) || "version".equals(sub) || "ver".equals(sub)) { about(sender, label, args); }
         else if ("migrate".equals(sub)) {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
                 new MigrateCommand(plugin).run(sender, label, args);
@@ -158,7 +162,10 @@ public final class ReferralCommand implements TabExecutor {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
                 if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
                 Player p = (Player) sender;
-                if (args.length >= 2) {
+                if (args.length >= 2 && dev.tmdevelopment.flarereferrals.layout.ChestBuilder.WORDS.contains(args[1].toLowerCase(Locale.ROOT))) {
+                    // chest builder: add / import / chest / remove / list
+                    new dev.tmdevelopment.flarereferrals.layout.ChestBuilder(plugin, label).run(p, args);
+                } else if (args.length >= 2) {
                     dev.tmdevelopment.flarereferrals.layout.LayoutMenu m = dev.tmdevelopment.flarereferrals.layout.LayoutMenus.create(plugin, args[1].toLowerCase(Locale.ROOT), p, null);
                     if (m == null) lang().send(sender, "admin.layout-unknown", "%menu%", args[1]);
                     else m.editMode().open();
@@ -208,31 +215,79 @@ public final class ReferralCommand implements TabExecutor {
                 || dev.tmdevelopment.flarereferrals.util.Perms.has(s, "admin");
     }
 
-    /** /referrals version (or ver): versions, storage and whether a new version is out. Works from the console. */
-    private void version(CommandSender s) {
+    /**
+     * /referrals about (also version / ver, also from the console): plugin version (green = latest,
+     * red = outdated), server, Java, storage, update notifier, plugin hooks and the permission list.
+     */
+    private void about(CommandSender s, String label, String[] args) {
         if (!canVersion(s)) { noPerm(s); return; }
+        if (args.length > 1 && args[1].toLowerCase(Locale.ROOT).startsWith("perm")) {
+            permissions(s);
+            return;
+        }
+        dev.tmdevelopment.flarereferrals.update.UpdateChecker u = plugin.updates();
+        if (u == null || !u.enabled()) {
+            aboutLines(s, label, "about.check-off");
+            return;
+        }
+        boolean[] answered = {false};
+        u.check(() -> {
+            answered[0] = true;
+            if (s instanceof Player && !((Player) s).isOnline()) return;
+            dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result r = u.result();
+            aboutLines(s, label, r == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.UPDATE ? "about.outdated"
+                    : r == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.LATEST ? "about.latest" : "about.failed");
+        });
+        if (!answered[0]) lang().send(s, "about.checking");
+    }
+
+    private void aboutLines(CommandSender s, String label, String versionLine) {
+        dev.tmdevelopment.flarereferrals.update.UpdateChecker u = plugin.updates();
+        String current = u == null ? plugin.getDescription().getVersion() : u.current();
+        String latest = u == null || u.latest() == null ? "?" : u.latest();
+        String url = u == null ? "https://github.com/" + dev.tmdevelopment.flarereferrals.update.UpdateChecker.REPO + "/releases" : u.downloadUrl();
+        String[] base = {"%label%", label, "%version%", current, "%latest%", latest, "%url%", url};
+        lang().send(s, "about.header", base);
+        lang().send(s, versionLine, base);
         // 1.21.1-R0.1-SNAPSHOT -> 1.21.1, 26.3.build.223 -> 26.3
         String mc = Bukkit.getBukkitVersion();
         java.util.regex.Matcher vm = java.util.regex.Pattern.compile("^(\\d+\\.\\d+(?:\\.\\d+)?)").matcher(mc);
         if (vm.find()) mc = vm.group(1);
         String network = plugin.data().network()
-                ? Text.replace(lang().raw("version.network"), "%server%", plugin.data().server()) : "";
-        lang().send(s, "version.info", "%version%", plugin.getDescription().getVersion(), "%minecraft%", mc,
-                "%software%", Bukkit.getName(), "%java%", System.getProperty("java.version", "?"),
-                "%storage%", plugin.data().type(), "%network%", network);
-        dev.tmdevelopment.flarereferrals.update.UpdateChecker u = plugin.updates();
-        if (u == null || !u.enabled()) return;
-        if (!u.fresh()) lang().send(s, "version.checking");
-        u.check(() -> {
-            if (s instanceof Player && !((Player) s).isOnline()) return;
-            if (u.result() == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.UPDATE) {
-                lang().send(s, "version.update", "%version%", u.current(), "%latest%", u.latest(), "%url%", u.downloadUrl());
-            } else if (u.result() == dev.tmdevelopment.flarereferrals.update.UpdateChecker.Result.LATEST) {
-                lang().send(s, "version.latest", "%version%", u.current());
-            } else {
-                lang().send(s, "version.failed");
+                ? Text.replace(lang().raw("about.network"), "%server-name%", plugin.data().server()) : "";
+        String sep = lang().raw("about.separator");
+        StringBuilder hooks = new StringBuilder();
+        String[] names = {"PlaceholderAPI", "Vault", "LuckPerms"};
+        for (String h : names) {
+            if (hooks.length() > 0) hooks.append(sep);
+            hooks.append(Text.replace(lang().raw(enabled(h) ? "about.hooked" : "about.missing"), "%hook%", h));
+        }
+        boolean notifier = u != null && u.enabled();
+        lang().send(s, "about.info", "%label%", label, "%version%", current,
+                "%minecraft%", mc, "%server%", Bukkit.getName(), "%java%", System.getProperty("java.version", "?"),
+                "%storage%", plugin.data().type(), "%network%", network,
+                "%notifier%", lang().raw(notifier ? "about.notifier-on" : "about.notifier-off"), "%hooks%", hooks.toString());
+    }
+
+    private static boolean enabled(String name) {
+        org.bukkit.plugin.Plugin p = Bukkit.getPluginManager().getPlugin(name);
+        return p != null && p.isEnabled();
+    }
+
+    /** Every permission of plugin.yml with what it does and who has it without a permissions plugin. */
+    private void permissions(CommandSender s) {
+        lang().send(s, "about.permissions.header");
+        for (org.bukkit.permissions.Permission perm : plugin.getDescription().getPermissions()) {
+            String def;
+            switch (perm.getDefault()) {
+                case TRUE: def = lang().raw("about.permissions.everyone"); break;
+                case OP: def = lang().raw("about.permissions.op"); break;
+                case NOT_OP: def = lang().raw("about.permissions.not-op"); break;
+                default: def = lang().raw("about.permissions.nobody");
             }
-        });
+            String desc = perm.getDescription() == null || perm.getDescription().isEmpty() ? "-" : perm.getDescription();
+            lang().send(s, "about.permissions.line", "%permission%", perm.getName(), "%description%", desc, "%default%", def);
+        }
     }
 
     private PlayerData findData(String name) {
@@ -330,16 +385,30 @@ public final class ReferralCommand implements TabExecutor {
 
     private void sendTop(CommandSender to) {
         List<PlayerData> top = plugin.data().top(10);
-        lang().send(to, "top.header");
-        if (top.isEmpty()) {
-            lang().send(to, "top.empty");
-        }
-        for (int i = 0; i < top.size(); i++) {
-            PlayerData d = top.get(i);
-            lang().send(to, "top.line", "%position%", String.valueOf(i + 1),
-                    "%player%", d.name(), "%invites%", String.valueOf(d.invites()));
-        }
-        lang().send(to, "top.footer");
+        List<java.util.UUID> offline = new ArrayList<>();
+        for (PlayerData d : top) if (Bukkit.getPlayer(d.uuid()) == null) offline.add(d.uuid());
+        Runnable send = () -> {
+            if (to instanceof Player && !((Player) to).isOnline()) return;
+            lang().send(to, "top.header");
+            if (top.isEmpty()) {
+                lang().send(to, "top.empty");
+            }
+            List<String> lines = lang().lines("top.line");
+            for (int i = 0; i < top.size(); i++) {
+                PlayerData d = top.get(i);
+                org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid());
+                for (String line : lines) {
+                    String text = Text.replace(line, "%position%", String.valueOf(i + 1),
+                            "%player%", d.name(), "%invites%", String.valueOf(d.invites()));
+                    // PlaceholderAPI placeholders (%luckperms_prefix%...) are of the player of this line
+                    dev.tmdevelopment.flarereferrals.util.Platform.send(to, Text.parseAbout(text, who));
+                }
+            }
+            lang().send(to, "top.footer");
+        };
+        // offline players: LuckPerms loads their rank first
+        if (!String.join("", lang().lines("top.line")).contains("%")
+                || !dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.load(plugin, offline, send)) send.run();
     }
 
     // ---------------------------------------------------------------- admin
@@ -390,6 +459,8 @@ public final class ReferralCommand implements TabExecutor {
                 java.util.UUID id = d.uuid();
                 String name = d.name();
                 java.util.function.IntConsumer done = now -> {
+                    plugin.referrals().refreshMenu(id);
+                    if (now >= 0) dev.tmdevelopment.flarereferrals.util.ReferralLog.log("ADMIN", sender.getName() + ": " + action + " " + name + " " + args[3] + " (invites " + before + " -> " + now + ")");
                     if (now < 0) lang().send(sender, "general.database-error");
                     else lang().send(sender, "admin.invites-updated", "%player%", name,
                             "%invites%", String.valueOf(now), "%before%", String.valueOf(before));
@@ -414,7 +485,11 @@ public final class ReferralCommand implements TabExecutor {
                     ops.clearReferrer(id);
                     ops.deleteRewards(id, null);
                     return Boolean.TRUE;
-                }, v -> lang().send(sender, v == null ? "general.database-error" : "admin.reset", "%player%", name));
+                }, v -> {
+                    if (v != null) dev.tmdevelopment.flarereferrals.util.ReferralLog.log("ADMIN", sender.getName() + ": reset " + name);
+                    plugin.referrals().refreshMenu(id);
+                    lang().send(sender, v == null ? "general.database-error" : "admin.reset", "%player%", name);
+                });
             }
         else if ("resetclaimed".equals(action)) {
                 java.util.UUID id = d.uuid();
@@ -434,7 +509,11 @@ public final class ReferralCommand implements TabExecutor {
                         for (Long rid : ids) ops.deleteReward(id, rid);
                     }
                     return Boolean.TRUE;
-                }, v -> lang().send(sender, v == null ? "general.database-error" : "admin.reset-claimed", "%player%", name));
+                }, v -> {
+                    if (v != null) dev.tmdevelopment.flarereferrals.util.ReferralLog.log("ADMIN", sender.getName() + ": resetclaimed " + name);
+                    plugin.referrals().refreshMenu(id);
+                    lang().send(sender, v == null ? "general.database-error" : "admin.reset-claimed", "%player%", name);
+                });
             }
         else { adminUsage(sender, label, "overview"); }
     }
@@ -450,7 +529,7 @@ public final class ReferralCommand implements TabExecutor {
             for (String k : dev.tmdevelopment.flarereferrals.util.J8.list("info", "menu", "rewards", "top", "collect")) if (plugin.canOpen(sender, k)) opts.add(k);
             if (plugin.canOpen(sender, "preview")) opts.add("milestone");
             if (admin) opts.addAll(dev.tmdevelopment.flarereferrals.util.J8.list("settings", "layout", "reload", "admin", "migrate"));
-            if (canVersion(sender)) opts.add("version");
+            if (canVersion(sender)) opts.add("about");
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (!p.equals(sender)) opts.add(p.getName());
             }
@@ -463,13 +542,23 @@ public final class ReferralCommand implements TabExecutor {
                 filter(opts, args[1], out);
             } else if (sub.equals("info") && dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "info.others")) {
                 filter(onlineNames(), args[1], out);
-            } else if (sub.equals("layout") && admin) {
-                filter(dev.tmdevelopment.flarereferrals.layout.LayoutManager.IDS, args[1], out);
+            } else if ((sub.equals("layout") || sub.equals("layouts")) && admin) {
+                List<String> opts = new ArrayList<>(dev.tmdevelopment.flarereferrals.layout.ChestBuilder.WORDS);
+                opts.addAll(plugin.layouts().allIds());
+                filter(opts, args[1], out);
+            } else if ((sub.equals("about") || sub.equals("version") || sub.equals("ver")) && canVersion(sender)) {
+                filter(dev.tmdevelopment.flarereferrals.util.J8.list("permissions"), args[1], out);
             } else if (sub.equals("migrate") && admin) {
                 filter(dev.tmdevelopment.flarereferrals.util.J8.list("yaml", "sqlite", "mysql"), args[1], out);
             } else if (sub.equals("admin") && admin) {
                 filter(dev.tmdevelopment.flarereferrals.util.J8.list("set", "add", "remove", "reset", "resetclaimed"), args[1], out);
             }
+        } else if (args.length == 3 && (args[0].equalsIgnoreCase("layout") || args[0].equalsIgnoreCase("layouts")) && admin) {
+            String w = args[1].toLowerCase(Locale.ROOT);
+            if (w.equals("import") || w.equals("chest")) filter(plugin.layouts().allIds(), args[2], out);
+            else if (w.equals("remove")) filter(plugin.layouts().customIds(), args[2], out);
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("layout") && args[1].equalsIgnoreCase("remove") && admin) {
+            filter(dev.tmdevelopment.flarereferrals.util.J8.list("confirm"), args[3], out);
         } else if (args.length >= 3 && args[0].equalsIgnoreCase("migrate") && admin) {
             filter(dev.tmdevelopment.flarereferrals.util.J8.list("merge", "confirm"), args[args.length - 1], out);
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin") && admin) {

@@ -130,14 +130,16 @@ public final class Heads {
         if (online == null) return;
         try {
             // Paper: the profile of the online player, with the skin if the server has one
-            Object profile = online.getClass().getMethod("getPlayerProfile").invoke(online);
-            java.util.Collection<?> props = (java.util.Collection<?>) profile.getClass().getMethod("getProperties").invoke(profile);
+            Class<?> paperProfile = Class.forName("com.destroystokyo.paper.profile.PlayerProfile");
+            Class<?> property = Class.forName("com.destroystokyo.paper.profile.ProfileProperty");
+            Object profile = org.bukkit.entity.Player.class.getMethod("getPlayerProfile").invoke(online);
+            java.util.Collection<?> props = (java.util.Collection<?>) paperProfile.getMethod("getProperties").invoke(profile);
             boolean skin = false;
             for (Object p : props) {
-                if ("textures".equals(p.getClass().getMethod("getName").invoke(p))) skin = true;
+                if ("textures".equals(property.getMethod("getName").invoke(p))) skin = true;
             }
             if (!skin) return;
-            for (java.lang.reflect.Method m : meta.getClass().getMethods()) {
+            for (java.lang.reflect.Method m : SkullMeta.class.getMethods()) {
                 if (m.getName().equals("setPlayerProfile") && m.getParameterCount() == 1
                         && m.getParameterTypes()[0].isInstance(profile)) {
                     m.invoke(meta, profile);

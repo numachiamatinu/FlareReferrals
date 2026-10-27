@@ -1,5 +1,6 @@
 #  Flare Referrals · menu 'main' (/referrals menu)
 #  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#  Chest:   /referrals layout chest <menu> puts it in a chest, /referrals layout import <menu> reads it back
 #
 #  enabled         false = menu off for everyone
 #  rows            size of the menu: 1-6 rows (9-54 slots)
@@ -7,7 +8,12 @@
 #  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
 #  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
 #  admin-only      true = players don't see it
-#  actions         [close] [open] top [player] cmd [console] cmd [message] text [sound] key
+#  permission      "node" = only players with it see the item ("" = everyone)
+#  update          true = drawn again every second (live placeholders)
+#  actions         [close] [open] <menu> [back] [refresh] [player] cmd [console] cmd [chat] text
+#                  [message] text [broadcast] text [actionbar] text [title] title;subtitle;in;stay;out
+#                  [sound] key [volume] [pitch] [delay] ticks [server] name
+#                  [left] / [right] / [shift-left] / [shift-right] in front = only that click
 #
 #  ── Format ──────────────────────────────────────────────
 #  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
@@ -56,7 +62,7 @@ elements:
     slots: "51"
     admin-only: false
     material: "KNOWLEDGE_BOOK"
-    name: "&bTop inviters"
+    name: "&#ff7a6bTop inviters"
     lore:
       - "&#ff7a6bClick to open"
   collect:
@@ -79,7 +85,7 @@ elements:
       - "&7Open /referrals settings"
 decorations:
   - slots: "0-3,5-8,9,17,18,26,27,35,36,44,46,48,50,52"
-    material: "GRAY_STAINED_GLASS_PANE"
+    material: "RED_STAINED_GLASS_PANE"
     name: " "
     lore: []
     glow: false

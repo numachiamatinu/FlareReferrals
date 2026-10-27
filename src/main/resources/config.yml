@@ -14,6 +14,11 @@ language: en
 # No names, UUIDs or IPs. false = this plugin sends nothing (plugins/TMDStats/config.yml turns off all plugins)
 stats: true
 
+# logs/referrals.log: every invite (also the blocked ones, with the reason), reward given and admin change,
+# with date and server. Useful for tickets and abuse. false = no log
+logs:
+  referrals: true
+
 # Checks GitHub for a new version (at startup, then at most every 6 hours) and tells admins when they join.
 # It only reads the public releases page, nothing about your server is sent. false = no check
 update-check: true

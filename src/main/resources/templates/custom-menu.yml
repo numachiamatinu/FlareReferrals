@@ -1,0 +1,28 @@
+#  Flare Referrals · menu made with the chest builder (/referrals layout add <name>)
+#  Opened with the commands in open-commands (e.g. /<name>). Admins: /referrals layout <name> = drag & drop editor
+#  Chest:   /referrals layout chest <name> puts it in a chest, /referrals layout import <name> reads it back
+#  Delete:  /referrals layout remove <name>   (a copy goes in backups/)
+#
+#  enabled         false = menu off for everyone (its commands don't exist)
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [vip] → /vip opens it   ·   open-permission: "" = everyone
+#  elements        buttons of the plugin placed with [button] <id>: head, milestones, referral-rewards,
+#                  collect, top, settings, close, back
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  item            a complete item (enchantments, colors, NBT...) saved as it was in the chest
+#  admin-only      true = players don't see it
+#  permission      "node" = only players with it see the item ("" = everyone)
+#  update          true = drawn again every second (live placeholders)
+#  actions         [close] [open] <menu> [back] [refresh] [player] cmd [console] cmd [chat] text
+#                  [message] text [broadcast] text [actionbar] text [title] title;subtitle;in;stay;out
+#                  [sound] key [volume] [pitch] [delay] ticks [server] name
+#                  [left] / [right] / [shift-left] / [shift-right] in front = only that click
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Placeholders  {player}, PlaceholderAPI %...%
+#  Tip       always write texts between "quotes"
+

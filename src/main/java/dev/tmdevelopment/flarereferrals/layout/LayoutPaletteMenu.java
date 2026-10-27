@@ -58,7 +58,7 @@ public final class LayoutPaletteMenu extends Menu {
             if (slot == 17) slot = 19;
             if (slot >= 26) break;
             String id = en.getKey();
-            int used = layout.element(id).slots.size();
+            int used = layout.elements().get(id) == null ? 0 : layout.elements().get(id).slots.size();
             set(slot++, new ItemBuilder(en.getValue())
                     .name(Text.item(sample.elementName(id), viewer))
                     .lore(lang().lore("gui.layout.palette-element", viewer, "%amount%", String.valueOf(used)))

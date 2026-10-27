@@ -26,6 +26,30 @@ public abstract class Menu implements InventoryHolder {
     protected final Player viewer;
     private Inventory inventory;
     private final Map<Integer, Consumer<InventoryClickEvent>> actions = new HashMap<>();
+    /** The FlareReferrals menu every player has open now (main thread only). */
+    private static final Map<java.util.UUID, Menu> OPEN = new HashMap<>();
+
+    /** The menu of this plugin the player is looking at, or null. */
+    public static Menu openFor(Player p) {
+        if (p == null) return null;
+        Menu m = OPEN.get(p.getUniqueId());
+        if (m != null) return m;
+        Object h = dev.tmdevelopment.flarereferrals.util.Compat.topHolder(p);
+        return h instanceof Menu ? (Menu) h : null;
+    }
+
+    /** True while the viewer still has this menu open. */
+    public boolean isOpen() {
+        return viewer.isOnline() && openFor(viewer) == this;
+    }
+
+    static void closed(Player p, Menu m) {
+        if (p != null && OPEN.get(p.getUniqueId()) == m) OPEN.remove(p.getUniqueId());
+    }
+
+    public static void clearOpen() {
+        OPEN.clear();
+    }
 
     protected Menu(FlareReferrals plugin, Player viewer) {
         this.plugin = plugin;
@@ -47,6 +71,9 @@ public abstract class Menu implements InventoryHolder {
         actions.clear();
         build();
         viewer.openInventory(inventory);
+        // another plugin can stop the menu from opening
+        Object top = dev.tmdevelopment.flarereferrals.util.Compat.topHolder(viewer);
+        if (top == null || top == this) OPEN.put(viewer.getUniqueId(), this);
     }
 
     /** Opens on the next tick (safe to call from click / close handlers). */
@@ -72,8 +99,9 @@ public abstract class Menu implements InventoryHolder {
         set(slot, item, null);
     }
 
+    /** Border of the plugin menus: red, the glass closest to the FlareReferrals coral. */
     protected ItemStack filler() {
-        return new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).name(Component.text(" ")).hideFlags().build();
+        return new ItemBuilder(Material.RED_STAINED_GLASS_PANE).name(Component.text(" ")).hideFlags().build();
     }
 
     protected void fillBorder() {

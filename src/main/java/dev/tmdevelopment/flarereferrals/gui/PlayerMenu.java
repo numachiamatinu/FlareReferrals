@@ -19,14 +19,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/** /referrals menu - layout: menus/main.yml */
+/**
+ * /referrals menu - layout: menus/main.yml.
+ * Also the menus made with the chest builder (menus/&lt;name&gt;.yml): they can use the same buttons with [button] &lt;id&gt;.
+ */
 public final class PlayerMenu extends LayoutMenu {
 
     public PlayerMenu(FlareReferrals plugin, Player viewer) {
         super(plugin, viewer, "main");
     }
 
-    @Override protected Component defaultTitle() { return lang().title("gui.player.title", viewer); }
+    /** A menu made with /referrals layout add. */
+    public PlayerMenu(FlareReferrals plugin, Player viewer, String layoutId, Menu parent) {
+        super(plugin, viewer, layoutId);
+        backTo(parent);
+    }
+
+    @Override
+    protected Component defaultTitle() {
+        if (!"main".equals(layoutId)) return Text.parse(dev.tmdevelopment.flarereferrals.layout.LayoutManager.prettyName(layoutId), viewer);
+        return lang().title("gui.player.title", viewer);
+    }
+
+    @Override
+    public java.util.Set<String> lists() {
+        return java.util.Collections.singleton("milestones");
+    }
 
     @Override
     public Map<String, Material> palette() {
@@ -38,6 +56,7 @@ public final class PlayerMenu extends LayoutMenu {
         m.put("top", Material.KNOWLEDGE_BOOK);
         m.put("settings", Material.COMPARATOR);
         m.put("close", Material.ARROW);
+        if (!"main".equals(layoutId)) m.put("back", Material.SPECTRAL_ARROW);
         return m;
     }
 
@@ -118,5 +137,6 @@ public final class PlayerMenu extends LayoutMenu {
                     e -> new SettingsMenu(plugin, viewer).openLater());
         }
         element("close", new ItemStack(Material.ARROW), "gui.common.close", null, false, e -> viewer.closeInventory());
+        element("back", new ItemStack(Material.ARROW), backTo == null ? "gui.common.close" : "gui.common.back", null, false, e -> goBack());
     }
 }

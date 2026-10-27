@@ -2,6 +2,51 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.0.22
+- **Chest builder**: build a menu in a real chest (single, double, trapped chest, barrel, shulker box), look at it
+  and type `/referrals layout add <name>`. The menu is saved in `menus/<name>.yml` and opens with `/<name>`.
+  Items keep slot, name, lore, enchantments, colors, model data, heads and NBT; a head named `{player}` shows
+  the head of the player who opens it. Lore lines that start with `[` are actions and options:
+  `[close]` `[open] <menu>` `[back]` `[refresh]` `[player] <cmd>` `[console] <cmd>` `[chat]` `[message]`
+  `[broadcast]` `[actionbar]` `[title]` `[sound]` `[delay]` `[server]`, `[left]` / `[right]` / `[shift-left]` /
+  `[shift-right]` in front of an action, `[permission] <node>`, `[admin-only]`, `[update]`, and `[button] <id>`
+  to place a button of the plugin (head, milestones, collect, top...). A lore line that must start with `[` is `\[`.
+  - `/referrals layout import <menu>`: the chest replaces the items of any menu, the buttons of the plugin stay
+    where they are (or move where you put their `[button]`).
+  - `/referrals layout chest <menu>`: puts a menu in an empty chest with its actions in the lore, to change it
+    by hand and import it again. Importing it back without changes gives the same file.
+  - `/referrals layout remove <name>` (asks to confirm) and `/referrals layout list`. Before an import or a remove
+    the old file is copied to `backups/`. After an import you get a summary and the menu opens in the editor.
+  - The menus made with it are in `/referrals settings > Menu layouts` too (edit, rows, title, on / off, delete).
+- The same actions and options work in every menu file: `permission: "node"`, `update: true` and the new actions.
+- **`/referrals about`** (also `version` / `ver`, also from the console): plugin version in green when it is the
+  latest or in red "OUTDATED! Please update!" with the download link, server version and type, Java, storage,
+  network, update notifier on / off, plugin hooks (PlaceholderAPI, Vault, LuckPerms) and a clickable list of every
+  permission with what it does (`/referrals about permissions`). The new texts are added to `lang/en.yml` by themselves.
+- **Ranks in the top**: PlaceholderAPI placeholders in the top menu (`menus/top.yml`) and in `/referrals top` are now
+  of the player of each line, not of the one looking at it. For a rank before the name:
+  `"&#ff7a6b#{position} %luckperms_prefix%&f{player}"`. With LuckPerms the rank shows also for offline players.
+- Menus in the plugin colors: borders are red instead of gray, the slot markers of the editor orange, and the last
+  aqua / pink button names coral. Menu files you never changed get the new colors by themselves.
+- Editor: items with enchantments, colors or NBT put in a menu are saved complete (before only material, name,
+  lore and glow), items without a name keep their Minecraft name. Moving an "admin only" decoration no longer turns
+  it into a normal one, and shift + right click makes only that slot admin only (before the whole border).
+  An editor left open while the menu is imported, reset or reloaded doesn't save over it, and it says when it
+  could not save.
+- The open commands of the menus are no longer taken away and added back at every reload: no more warnings about
+  "/<command> is already used", and a deleted menu frees its command at once.
+- **A file with a mistake is never overwritten**: a missing quote or a TAB in config.yml, rewards.yml, lang or menu
+  files used to be replaced by the default file at the next save, and the changes were lost. Now the console (and
+  `/referrals reload`) says the file and the line of the mistake, the file is not touched, and the last working values
+  stay until you fix it. With a mistake in config.yml or rewards.yml at startup the plugin waits to be fixed instead
+  of starting with default settings (`/referrals` tells you the file and the line).
+- **logs/referrals.log**: every invite (also the blocked ones, with the reason: same IP, playtime, circular...),
+  reward given, admin command, migration and menu change, with date and server. Off with `logs.referrals: false`.
+- Open menus update by themselves when a new invite or a reward to collect arrives (also from another server).
+- **Developer API**: `FlareReferralsAPI` (invites, inviter, top) and the events `ReferralEvent` (cancellable, before an
+  invite is saved) and `ReferralCompleteEvent` (when an invite counts).
+- LuckPerms added to `softdepend`, every permission in plugin.yml has a clear description.
+
 ## 1.0.21
 - Collect menu: rewards (inviter, welcome, milestones) wait in `/referrals collect` until the player takes them,
   with a clickable notification (chat, action bar, title, sound) and a reminder every few minutes. Preview of

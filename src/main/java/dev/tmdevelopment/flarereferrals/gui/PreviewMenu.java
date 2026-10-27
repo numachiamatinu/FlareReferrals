@@ -40,6 +40,11 @@ public final class PreviewMenu extends LayoutMenu {
     }
 
     @Override
+    public java.util.Set<String> lists() {
+        return java.util.Collections.singleton("items");
+    }
+
+    @Override
     public Map<String, Material> palette() {
         Map<String, Material> m = new LinkedHashMap<>();
         m.put("items", Material.CHEST);

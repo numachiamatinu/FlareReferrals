@@ -37,6 +37,11 @@ public final class CollectMenu extends LayoutMenu {
     @Override protected Component defaultTitle() { return lang().title("gui.collect.title", viewer); }
 
     @Override
+    public java.util.Set<String> lists() {
+        return java.util.Collections.singleton("rewards");
+    }
+
+    @Override
     public Map<String, Material> palette() {
         Map<String, Material> m = new LinkedHashMap<>();
         m.put("info", Material.CHEST_MINECART);

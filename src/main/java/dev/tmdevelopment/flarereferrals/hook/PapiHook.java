@@ -14,4 +14,13 @@ public final class PapiHook {
             return text;
         }
     }
+
+    /** Placeholders of an offline player (top lines, holograms...). */
+    public static String apply(org.bukkit.OfflinePlayer player, String text) {
+        try {
+            return PlaceholderAPI.setPlaceholders(player, text);
+        } catch (Throwable t) {
+            return text;
+        }
+    }
 }

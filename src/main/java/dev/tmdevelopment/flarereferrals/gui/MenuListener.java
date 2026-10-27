@@ -33,6 +33,7 @@ public final class MenuListener implements Listener {
     public void onClose(InventoryCloseEvent e) {
         if (e.getInventory().getHolder() instanceof Menu) {
             Menu menu = (Menu) e.getInventory().getHolder();
+            if (e.getPlayer() instanceof org.bukkit.entity.Player) Menu.closed((org.bukkit.entity.Player) e.getPlayer(), menu);
             menu.handleClose(e);
         }
     }

@@ -224,10 +224,18 @@ public final class DependencyInstaller {
             Bukkit.getPluginManager().enablePlugin(p);
             if (!p.isEnabled()) throw new IllegalStateException("plugin did not enable");
             plugin.getLogger().info(name + " installed and enabled, no restart needed.");
-            onLoaded.accept(name);
         } catch (Throwable t) {
             plugin.getLogger().warning(name + " was downloaded but could not be started now ("
                     + t.getMessage() + "). It will be active after the next restart.");
+            return;
         }
+        // the plugin is running; hooking into it waits one second, until it has finished starting
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            try {
+                onLoaded.accept(name);
+            } catch (Throwable t) {
+                plugin.getLogger().info(name + " is running; the FlareReferrals placeholders in it work after the next restart.");
+            }
+        }, 20L);
     }
 }

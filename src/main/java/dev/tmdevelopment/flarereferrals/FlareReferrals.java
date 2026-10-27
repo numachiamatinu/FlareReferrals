@@ -91,7 +91,13 @@ public final class FlareReferrals extends JavaPlugin {
         }
         long start = System.currentTimeMillis();
         saveDefaultConfig();
+        dev.tmdevelopment.flarereferrals.util.SafeYaml.clear();
         dev.tmdevelopment.flarereferrals.util.Headers.sync(this, new java.io.File(getDataFolder(), "config.yml"), "config.yml");
+        if (!configReadable()) {
+            // the storage / network settings are unknown: starting with the defaults could save data in the wrong place
+            waitForFix("config.yml");
+            return;
+        }
         updateConfig();
 
         boolean papi = Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
@@ -103,6 +109,11 @@ public final class FlareReferrals extends JavaPlugin {
         currencies.load();
         rewards = new RewardManager(this);
         rewards.load();
+        if (dev.tmdevelopment.flarereferrals.util.SafeYaml.broken("rewards.yml")) {
+            // without its rewards, invites would count and give nothing
+            waitForFix("rewards.yml");
+            return;
+        }
         finishMigration();
         layouts = new dev.tmdevelopment.flarereferrals.layout.LayoutManager(this);
         layouts.load();
@@ -118,6 +129,8 @@ public final class FlareReferrals extends JavaPlugin {
         }
         referrals = new ReferralService(this);
         referrals.checkServers();
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.start(this, getConfig().getBoolean("logs.referrals", true),
+                data.network() ? data.server() : "");
         chatInput = new ChatInput(this);
 
         Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
@@ -167,7 +180,7 @@ public final class FlareReferrals extends JavaPlugin {
         if (stats != null) stats.shutdown();
         dev.tmdevelopment.flarereferrals.service.ScreenEffects.clear();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (dev.tmdevelopment.flarereferrals.util.Compat.topHolder(p) instanceof dev.tmdevelopment.flarereferrals.gui.Menu) {
+            if (dev.tmdevelopment.flarereferrals.gui.Menu.openFor(p) != null) {
                 p.closeInventory();
             }
         }
@@ -175,6 +188,8 @@ public final class FlareReferrals extends JavaPlugin {
             try { menuCommands.unregisterAll(); } catch (Throwable ignored) {}
         }
         if (data != null) data.stop();
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.stop();
+        dev.tmdevelopment.flarereferrals.gui.Menu.clearOpen();
     }
 
     /**
@@ -191,6 +206,42 @@ public final class FlareReferrals extends JavaPlugin {
         if (rewards.inviter().delivery().equals("default")) rewards.inviter().delivery("auto");
         if (rewards.invited().delivery().equals("default")) rewards.invited().delivery("auto");
         rewards.save();
+    }
+
+    /**
+     * A file with a mistake at startup: nothing starts (no data, no rewards), the file is not touched, and /referrals
+     * only says what to fix (a disabled plugin would answer with an error of the server instead).
+     */
+    private void waitForFix(String file) {
+        unsupported = true;
+        String[] p = null;
+        for (String[] pr : dev.tmdevelopment.flarereferrals.util.SafeYaml.problems()) if (pr[0].equals(file)) p = pr;
+        String where = p == null ? "" : " around line " + p[1] + " (" + p[3] + ")";
+        String text = "FlareReferrals is off: " + file + " has a mistake" + where + ". Fix it and restart the server.";
+        getLogger().severe(text);
+        PluginCommand cmd = getCommand("referrals");
+        if (cmd != null) {
+            cmd.setExecutor((sender, command, label, args) -> {
+                sender.sendMessage("\u00a7c" + text);
+                return true;
+            });
+            cmd.setTabCompleter((sender, command, alias, args) -> new java.util.ArrayList<>());
+        }
+    }
+
+    /** False when config.yml has a mistake (the reason is in the console): it is then never saved. */
+    private boolean configReadable() {
+        return dev.tmdevelopment.flarereferrals.util.SafeYaml.load(this, new java.io.File(getDataFolder(), "config.yml"), "config.yml") != null;
+    }
+
+    /** Never writes over a config.yml with a mistake: the owner's settings would be lost. */
+    @Override
+    public void saveConfig() {
+        if (dev.tmdevelopment.flarereferrals.util.SafeYaml.broken("config.yml")) {
+            getLogger().warning("config.yml was not saved because it has a mistake: fix it and use /referrals reload.");
+            return;
+        }
+        super.saveConfig();
     }
 
     private void updateConfig() {
@@ -249,10 +300,16 @@ public final class FlareReferrals extends JavaPlugin {
     /** @return true when storage / network settings changed: they need a restart. */
     public boolean reloadAll() {
         String before = storageSettings();
+        dev.tmdevelopment.flarereferrals.util.SafeYaml.clear();
         dev.tmdevelopment.flarereferrals.util.Headers.sync(this, new java.io.File(getDataFolder(), "config.yml"), "config.yml");
-        reloadConfig();
-        updateConfig();
+        // config.yml with a mistake: the last working settings stay
+        if (configReadable()) {
+            reloadConfig();
+            updateConfig();
+        }
         lang.load();
+        if (data != null) dev.tmdevelopment.flarereferrals.util.ReferralLog.start(this, getConfig().getBoolean("logs.referrals", true),
+                data.network() ? data.server() : "");
         currencies.load();
         currencies.checkAll();
         java.util.Set<String> offBefore = offRewards();

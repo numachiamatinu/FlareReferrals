@@ -58,15 +58,14 @@ public final class Compat {
         }
     }
 
-    /** Removes a command registered by us from the known commands (all names and aliases). */
+    /** Removes a command registered by us from the known commands (all names and aliases, also "prefix:name"). */
     @SuppressWarnings("unchecked")
-    public static void removeKnown(Command command) {
+    public static void removeKnown(Command command, String prefix) {
         try {
             CommandMap map = commandMap();
-            command.unregister(map);
             Map<String, Command> known = null;
             try {
-                Method m = map.getClass().getMethod("getKnownCommands");
+                Method m = CommandMap.class.getMethod("getKnownCommands"); // Paper (and Spigot 1.20+)
                 known = (Map<String, Command>) m.invoke(map);
             } catch (NoSuchMethodException e) {
                 Class<?> c = map.getClass();
@@ -80,11 +79,22 @@ public final class Compat {
                     }
                 }
             }
-            if (known == null) return;
-            Iterator<Map.Entry<String, Command>> it = known.entrySet().iterator();
-            while (it.hasNext()) if (it.next().getValue() == command) it.remove();
+            if (known != null) {
+                // remove by key: some servers give a map whose iterator can't remove
+                java.util.List<String> keys = new java.util.ArrayList<>();
+                for (Map.Entry<String, Command> en : known.entrySet()) if (en.getValue() == command) keys.add(en.getKey());
+                String name = command.getName().toLowerCase(java.util.Locale.ROOT);
+                if (known.get(name) == command) keys.add(name);
+                if (prefix != null && known.get(prefix + ":" + name) == command) keys.add(prefix + ":" + name);
+                for (String k : keys) known.remove(k);
+            }
+            command.unregister(map);
         } catch (Throwable ignored) {
         }
+    }
+
+    public static void removeKnown(Command command) {
+        removeKnown(command, null);
     }
 
     // ------------------------------------------------------------------ players
@@ -103,9 +113,10 @@ public final class Compat {
     /** Holder of the menu a player has open (InventoryView is a class before 1.21 and an interface after). */
     public static Object topHolder(org.bukkit.entity.Player p) {
         try {
-            Object view = p.getClass().getMethod("getOpenInventory").invoke(p);
-            Object top = view.getClass().getMethod("getTopInventory").invoke(view);
-            return ((org.bukkit.inventory.Inventory) top).getHolder();
+            // methods of the public API types: the server classes behind them may not be accessible by reflection
+            Object view = Class.forName("org.bukkit.entity.HumanEntity").getMethod("getOpenInventory").invoke(p);
+            Object top = Class.forName("org.bukkit.inventory.InventoryView").getMethod("getTopInventory").invoke(view);
+            return top == null ? null : ((org.bukkit.inventory.Inventory) top).getHolder();
         } catch (Throwable t) {
             return null;
         }
@@ -116,7 +127,7 @@ public final class Compat {
     /** Enchantment glint without enchantments in the lore. */
     public static void glow(ItemMeta meta) {
         try {
-            Method m = meta.getClass().getMethod("setEnchantmentGlintOverride", Boolean.class); // 1.20.5+
+            Method m = ItemMeta.class.getMethod("setEnchantmentGlintOverride", Boolean.class); // 1.20.5+
             m.invoke(meta, Boolean.TRUE);
             return;
         } catch (Throwable ignored) {
@@ -132,9 +143,9 @@ public final class Compat {
     public static boolean hasGlow(ItemMeta meta) {
         if (meta.hasEnchants()) return true;
         try {
-            Method has = meta.getClass().getMethod("hasEnchantmentGlintOverride");
+            Method has = ItemMeta.class.getMethod("hasEnchantmentGlintOverride");
             if (!(Boolean) has.invoke(meta)) return false;
-            Object v = meta.getClass().getMethod("getEnchantmentGlintOverride").invoke(meta);
+            Object v = ItemMeta.class.getMethod("getEnchantmentGlintOverride").invoke(meta);
             return Boolean.TRUE.equals(v);
         } catch (Throwable t) {
             return false;
@@ -152,10 +163,12 @@ public final class Compat {
             if (url != null) {
                 Method create = Bukkit.class.getMethod("createPlayerProfile", UUID.class, String.class);
                 Object profile = create.invoke(null, id, "FlareHead");
-                Object textures = profile.getClass().getMethod("getTextures").invoke(profile);
-                textures.getClass().getMethod("setSkin", URL.class).invoke(textures, new URL(url));
-                profile.getClass().getMethod("setTextures", Class.forName("org.bukkit.profile.PlayerTextures")).invoke(profile, textures);
-                Method set = meta.getClass().getMethod("setOwnerProfile", Class.forName("org.bukkit.profile.PlayerProfile"));
+                Class<?> pp = Class.forName("org.bukkit.profile.PlayerProfile");
+                Class<?> pt = Class.forName("org.bukkit.profile.PlayerTextures");
+                Object textures = pp.getMethod("getTextures").invoke(profile);
+                pt.getMethod("setSkin", URL.class).invoke(textures, new URL(url));
+                pp.getMethod("setTextures", pt).invoke(profile, textures);
+                Method set = SkullMeta.class.getMethod("setOwnerProfile", pp);
                 set.invoke(meta, profile);
                 return;
             }
@@ -186,15 +199,17 @@ public final class Compat {
     public static String describeHead(SkullMeta meta) {
         // 1.18.1+
         try {
-            Object profile = meta.getClass().getMethod("getOwnerProfile").invoke(meta);
+            Class<?> pp = Class.forName("org.bukkit.profile.PlayerProfile");
+            Class<?> pt = Class.forName("org.bukkit.profile.PlayerTextures");
+            Object profile = SkullMeta.class.getMethod("getOwnerProfile").invoke(meta);
             if (profile != null) {
-                Object textures = profile.getClass().getMethod("getTextures").invoke(profile);
-                Object skin = textures.getClass().getMethod("getSkin").invoke(textures);
+                Object textures = pp.getMethod("getTextures").invoke(profile);
+                Object skin = pt.getMethod("getSkin").invoke(textures);
                 if (skin != null) {
                     String u = skin.toString();
                     return "texture:" + u.substring(u.lastIndexOf('/') + 1);
                 }
-                Object name = profile.getClass().getMethod("getName").invoke(profile);
+                Object name = pp.getMethod("getName").invoke(profile);
                 if (name != null) return "head:" + name;
             }
         } catch (Throwable ignored) {

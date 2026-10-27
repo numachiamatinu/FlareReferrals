@@ -16,30 +16,57 @@ import java.util.Locale;
 public final class MenuCommands {
 
     private final FlareReferrals plugin;
-    private final List<Command> registered = new ArrayList<>();
+    private final List<OpenCommand> registered = new ArrayList<>();
 
     public MenuCommands(FlareReferrals plugin) {
         this.plugin = plugin;
     }
 
-    /** Removes the old commands and registers the ones written in menus/*.yml now. */
+    /**
+     * Registers the commands written in menus/*.yml now. A command that is still needed is kept and only pointed
+     * to its menu again (removing and adding it back made Paper see it as taken by "another plugin");
+     * the ones not needed any more are removed for real, so their name is free at once.
+     */
     public void refresh() {
         CommandMap map = dev.tmdevelopment.flarereferrals.util.Compat.commandMap();
-        unregisterAll();
-        for (String id : LayoutManager.IDS) {
+        java.util.Map<String, String[]> wanted = new java.util.LinkedHashMap<>();
+        for (String id : plugin.layouts().allIds()) {
             MenuLayout layout = plugin.layouts().get(id);
             if (!layout.enabled()) continue; // menu turned off: its commands don't exist
             for (String raw : layout.openCommands()) {
                 String name = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
                 if (name.startsWith("/")) name = name.substring(1);
                 if (name.isEmpty() || name.contains(" ") || name.contains(":")) continue;
-                OpenCommand cmd = new OpenCommand(name, id, layout.openPermission());
-                boolean own = map.register("flarereferrals", cmd);
-                registered.add(cmd);
-                if (!own) {
-                    plugin.getLogger().warning("/" + name + " (menus/" + id + ".yml) is already used by another plugin: "
-                            + "use /flarereferrals:" + name + " or pick another name.");
+                if (wanted.containsKey(name)) {
+                    plugin.getLogger().warning("/" + name + " is in the open-commands of two menus (" + wanted.get(name)[0]
+                            + " and " + id + "): it opens " + wanted.get(name)[0] + ".");
+                    continue;
                 }
+                wanted.put(name, new String[]{id, layout.openPermission()});
+            }
+        }
+        // not needed any more: removed
+        for (java.util.Iterator<OpenCommand> it = registered.iterator(); it.hasNext(); ) {
+            OpenCommand c = it.next();
+            if (!wanted.containsKey(c.getName().toLowerCase(Locale.ROOT))) {
+                dev.tmdevelopment.flarereferrals.util.Compat.removeKnown(c, "flarereferrals");
+                it.remove();
+            }
+        }
+        for (java.util.Map.Entry<String, String[]> en : wanted.entrySet()) {
+            String name = en.getKey();
+            OpenCommand cmd = null;
+            for (OpenCommand c : registered) if (c.getName().equalsIgnoreCase(name)) cmd = c;
+            if (cmd != null) {
+                cmd.point(en.getValue()[0], en.getValue()[1]);
+                continue;
+            }
+            cmd = new OpenCommand(name, en.getValue()[0], en.getValue()[1]);
+            boolean own = map.register("flarereferrals", cmd);
+            registered.add(cmd);
+            if (!own) {
+                plugin.getLogger().warning("/" + name + " (menus/" + en.getValue()[0] + ".yml) is already used by another plugin: "
+                        + "use /flarereferrals:" + name + " or pick another name.");
             }
         }
         // runs on the next tick, when the server is fully started
@@ -49,20 +76,38 @@ public final class MenuCommands {
         });
     }
 
+    /** The menu that opens with /name, or null. */
+    public String menuOf(String name) {
+        for (OpenCommand c : registered) {
+            if (c.getName().equalsIgnoreCase(name)) return c.layoutId;
+        }
+        return null;
+    }
+
+    /** True for a command made by this class (also by an older copy of the plugin, after a plugin reload). */
+    public static boolean isMenuCommand(Command c) {
+        return c != null && c.getClass().getName().equals(OpenCommand.class.getName());
+    }
+
     public void unregisterAll() {
-        for (Command c : registered) dev.tmdevelopment.flarereferrals.util.Compat.removeKnown(c);
+        for (OpenCommand c : registered) dev.tmdevelopment.flarereferrals.util.Compat.removeKnown(c, "flarereferrals");
         registered.clear();
     }
 
     private final class OpenCommand extends Command {
-        private final String layoutId;
-        private final String permission;
+        private String layoutId;
+        private String permission;
 
         OpenCommand(String name, String layoutId, String permission) {
-            super(name, "Opens the " + layoutId + " menu of Flare Referrals", "/" + name, new ArrayList<>());
+            super(name, "Opens the " + layoutId + " menu of FlareReferrals", "/" + name, new ArrayList<>());
+            point(layoutId, permission);
+        }
+
+        /** The menu this command opens (changed by a reload without registering the command again). */
+        void point(String layoutId, String permission) {
             this.layoutId = layoutId;
             this.permission = permission == null ? "" : permission.trim();
-            if (!this.permission.isEmpty()) setPermission(this.permission);
+            setPermission(this.permission.isEmpty() ? null : this.permission);
         }
 
         @Override
@@ -76,10 +121,16 @@ public final class MenuCommands {
                 plugin.lang().send(p, "general.no-permission");
                 return true;
             }
-            if (!plugin.canOpen(p, accessKey())) return true;
+            if (!allowed(p)) return true;
             LayoutMenu menu = LayoutMenus.create(plugin, layoutId, p, null);
             if (menu != null) menu.open();
             return true;
+        }
+
+        /** Menus of the chest builder: only enabled + open-permission. The others: player-access too. */
+        private boolean allowed(Player p) {
+            if (plugin.layouts().isCustom(layoutId)) return plugin.layouts().get(layoutId).enabled();
+            return plugin.canOpen(p, accessKey());
         }
 
         private String accessKey() {
@@ -95,7 +146,7 @@ public final class MenuCommands {
             if (!(target instanceof Player)) return true;
             Player p = (Player) target;
             if (!permission.isEmpty() && !p.hasPermission(permission)) return false;
-            return plugin.canOpen(p, accessKey());
+            return allowed(p);
         }
 
         @Override

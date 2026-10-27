@@ -178,7 +178,7 @@ settings:
     - "&7Reward messages can be edited"
     - "&7directly in each reward menu."
   top:
-    name: "&bTop inviters"
+    name: "&#ff7a6bTop inviters"
     lore:
     - "&#ff7a6bClick to open"
   player-access:
@@ -189,7 +189,7 @@ settings:
     - ""
     - "&#ff7a6bClick to open"
   layouts:
-    name: "&dMenu layouts"
+    name: "&#ff7a6bMenu layouts"
     lore:
     - "&7Move buttons, glass and heads of"
     - "&7the player menus with drag & drop."
@@ -214,7 +214,7 @@ rewardset:
     auto: "&#ff7a6bRight away"
     default: "&7like the setting ({mode}&7)"
   servers:
-    name: "&bServers"
+    name: "&#ff7a6bServers"
     lore:
     - "&7Where this reward can be received."
     - ""
@@ -250,7 +250,7 @@ rewardset:
     - "&7Money, MobCoins, tokens, coins, XP..."
     - ""
   commands:
-    name: "&dCommands &7({amount})"
+    name: "&#ff7a6bCommands &7({amount})"
     lore:
     - "&7Run by the console."
     - ""
@@ -288,7 +288,7 @@ rewardset:
     - "&#ff7a6bRight-click &7use a head (player name"
     - "&7or minecraft-heads.com texture)"
   screen:
-    name: "&bTitle, action bar & boss bar"
+    name: "&#ff7a6bTitle, action bar & boss bar"
     lore:
     - "&7Shown on the screen of the player"
     - "&7who gets this reward."
@@ -297,7 +297,7 @@ rewardset:
     actionbar-label: "&7Action bar:"
     bossbar-label: "&7Boss bar:"
   preview:
-    name: "&bPreview"
+    name: "&#ff7a6bPreview"
     lore:
     - "&7See what players get."
   delete:
@@ -353,6 +353,7 @@ layout:
   palette-title: "&7Add to slot {slot}"
   default-title: "&7default"
   confirm-reset: "&7Restore the default layout of &f{menu}&7?"
+  confirm-remove: "&7Delete the menu &f{menu}&7? (a copy goes in backups/)"
   menus:
     main:
       name: "&fMain menu"
@@ -381,6 +382,23 @@ layout:
   - "&#ff7a6bRight-click &7+1 row (1-6)"
   - "&#ff7a6bShift-left &7change title"
   - "&#ff7a6bShift-right &7restore default"
+  # menus made with the chest builder (/referrals layout add <name>)
+  custom-entry:
+  - "&7Made with the chest builder"
+  - ""
+  - "&7Size: &#ff7a6b{rows} rows &7({slots} slots)"
+  - "&7Title: {title}"
+  - "&7Open commands: &f{commands}"
+  - "&7File: &f{file}"
+  - ""
+  - "&#ff7a6bLeft-click &7edit with drag & drop"
+  - "&#ff7a6bRight-click &7+1 row (1-6)"
+  - "&#ff7a6bShift-left &7change title"
+  - "&#ff7a6bShift-right &7delete"
+  more:
+    name: "&#ff7a6b+{amount} more"
+    lore:
+    - "&7Every menu: &f/referrals layout list"
   help:
     name: "&#ff7a6bHow it works"
     lore:
@@ -390,8 +408,11 @@ layout:
     - "&7from minecraft-heads.com...) become"
     - "&7decorations. Closing saves."
     - ""
-    - "&7Click actions for decorations can be"
-    - "&7added in &fmenus/<menu>.yml&7."
+    - "&#ff7a6bChest builder: &7build a menu in a"
+    - "&7chest, look at it and type"
+    - "&f/referrals layout add <name>&7."
+    - "&7Actions go in the lore: &f[close]"
+    - "&f[open] <menu> [player] <cmd>&7..."
   admin-only-tag:
   - ""
   - "&c[Admin only] &7players don't see it"
@@ -431,7 +452,7 @@ layout:
     head: "&fYour stats (head)"
     milestones: "&#ff7a6bMilestones list"
     referral-rewards: "&#ff7a6bReferral rewards button"
-    top: "&bTop button"
+    top: "&#ff7a6bTop button"
     settings: "&cAdmin settings button"
     close: "&cClose button"
     info: "&fInfo book"

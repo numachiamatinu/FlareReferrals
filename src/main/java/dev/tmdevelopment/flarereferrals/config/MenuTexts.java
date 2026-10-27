@@ -34,8 +34,16 @@ public final class MenuTexts {
         File f = new File(dir, "admin.yml");
         if (!f.exists()) plugin.saveResource("menus/admin.yml", false);
         Headers.sync(plugin, f, "menus/admin.yml");
-        admin = YamlConfiguration.loadConfiguration(f);
+        YamlConfiguration loaded = dev.tmdevelopment.flarereferrals.util.SafeYaml.load(plugin, f, "menus/admin.yml");
+        // a file with a mistake is never saved: the last working texts (or the defaults) are used
+        if (loaded == null && admin != null) return;
         YamlConfiguration def = jar("menus/admin.yml");
+        if (loaded == null) {
+            admin = new YamlConfiguration();
+            if (def != null) admin.setDefaults(def);
+            return;
+        }
+        admin = loaded;
         if (def == null) return;
         // old default texts -> new ones (edited texts are kept)
         boolean changed = dev.tmdevelopment.flarereferrals.util.TextUpdates.renameCommand(admin);

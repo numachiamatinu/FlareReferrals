@@ -144,6 +144,8 @@ final class MigrateCommand {
 
     /** Copy done: this server switches to the new storage at the next restart. */
     private void finished(CommandSender sender, String target, String key, String... ph) {
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("MIGRATE", sender.getName() + ": " + plugin.data().type() + " -> " + target
+                + (key.endsWith("merged") ? " (merge)" : ""));
         plugin.data().callMain(() -> {
             plugin.data().freeze();
             plugin.getConfig().set("storage.type", target);

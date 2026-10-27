@@ -55,6 +55,12 @@ public final class Text {
         papi = enabled;
     }
 
+    /** PlaceholderAPI placeholders of a player in plain text (commands of menu actions...). */
+    public static String papi(Player player, String text) {
+        if (!papi || player == null || text == null || text.indexOf('%') < 0) return text;
+        return PapiHook.apply(player, text);
+    }
+
     public static String legacyToMini(String input) {
         if (input == null || input.isEmpty()) return "";
         Matcher m = HEX.matcher(input);
@@ -76,10 +82,23 @@ public final class Text {
     }
 
     public static Component parse(String input, Player player) {
+        return parseAbout(input, player);
+    }
+
+    /**
+     * Same as parse, but the PlaceholderAPI placeholders are of another player (e.g. the player of a top line:
+     * %luckperms_prefix% shows his rank, not the one of who is looking). Works for offline players too.
+     */
+    public static Component parseAbout(String input, org.bukkit.OfflinePlayer about) {
         if (input == null) return Component.empty();
         String s = input;
-        if (papi && player != null && s.indexOf('%') >= 0) {
-            s = PapiHook.apply(player, s);
+        if (about != null && !(about instanceof Player) && s.indexOf("%luckperms_") >= 0) {
+            // offline players: prefix / suffix straight from LuckPerms (its PlaceholderAPI expansion leaves them empty)
+            s = luckPerms(s, about.getUniqueId(), "prefix");
+            s = luckPerms(s, about.getUniqueId(), "suffix");
+        }
+        if (papi && about != null && s.indexOf('%') >= 0) {
+            s = about instanceof Player ? PapiHook.apply((Player) about, s) : PapiHook.apply(about, s);
         }
         if (s.indexOf('1') >= 0) s = singular(s);
         try {
@@ -103,6 +122,24 @@ public final class Text {
     /** Same as parse but without the default italic of item names / lore. */
     public static Component item(String input, Player player) {
         return parse(input, player).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+    }
+
+    private static String luckPerms(String s, java.util.UUID id, String which) {
+        String key = "%luckperms_" + which + "%";
+        if (!s.contains(key)) return s;
+        String v = dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.meta(id, which);
+        return v == null ? s : s.replace(key, v);
+    }
+
+    /** item() with the placeholders of another player (see parseAbout). */
+    public static Component itemAbout(String input, org.bukkit.OfflinePlayer about) {
+        return parseAbout(input, about).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+    }
+
+    public static List<Component> itemsAbout(List<String> lines, org.bukkit.OfflinePlayer about) {
+        List<Component> out = new ArrayList<>(lines.size());
+        for (String line : lines) out.add(itemAbout(line, about));
+        return out;
     }
 
     public static List<Component> items(List<String> lines, Player player) {

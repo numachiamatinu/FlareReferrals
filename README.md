@@ -40,7 +40,11 @@ played for a while.
   away: your choice, for every reward
 - **Customizable menus** like DeluxeMenus: drag & drop editor, 1–6 rows, decorations with actions,
   textured heads, admin-only items, own open commands (e.g. `/rewards`), any menu can be turned off
-- **Top inviters** menu and chat list
+- **Chest builder**: build a menu in a real chest, look at it and type `/referrals layout add <name>`.
+  Actions go in the lore (`[close]`, `[open] <menu>`, `[player] <cmd>`, `[left]` / `[right]`, `[permission]`...),
+  items keep enchantments, colors and NBT, `[button] collect` places a button of the plugin
+- **Top inviters** menu and chat list, with ranks: PlaceholderAPI placeholders are of the player of each line
+  (`%luckperms_prefix%`), also for offline players
 - **Player access**: choose what normal players can open, what they can't use doesn't even show up
 - **Offline rewards**: kept and given on the next join
 - **Storage**: data.yml (default), SQLite or MySQL / MariaDB, moved with one command (`/referrals migrate`)
@@ -51,6 +55,9 @@ played for a while.
 - **Hex colors, gradients, rainbow, click & hover** in every text (MiniMessage and `&` codes)
 - **PlaceholderAPI** placeholders
 - **Safe updates**: new options and texts are added to your files, your edits are never touched
+- **Safe files**: a file with a mistake is never overwritten, the console says the file and the line
+- **Log**: `logs/referrals.log` with every invite (also the blocked ones and why), reward and admin change
+- **Developer API** and events for other plugins
 
 ## Compatibility
 
@@ -59,7 +66,7 @@ played for a while.
 | Server | Spigot, Paper, Purpur and other forks |
 | Versions | 1.16.5 → 26.x (one jar for all) |
 | Java | 8 or newer |
-| Optional | PlaceholderAPI, Vault + an economy plugin |
+| Optional | PlaceholderAPI, Vault + an economy plugin, LuckPerms (ranks in the top) |
 
 ## Installation
 
@@ -85,12 +92,17 @@ Main command `/referrals`. Also `/freferrals`, `/fref`, `/freferral` and `/refer
 | `/referrals collect` | Rewards waiting to be collected | `flarereferrals.collect` |
 | `/referrals claim [n]` | Collect everything waiting (or one milestone), used by the [Collect] buttons | everyone |
 | `/referrals settings` | Admin menu | `flarereferrals.admin` |
-| `/referrals layout [menu]` | Menu editor (main, collect, rewards, top, preview) | `flarereferrals.admin` |
+| `/referrals layout [menu]` | Menu editor (main, collect, rewards, top, preview and your own menus) | `flarereferrals.admin` |
+| `/referrals layout add <name>` | New menu from the chest you look at, opened with `/<name>` | `flarereferrals.admin` |
+| `/referrals layout import <menu>` | The chest replaces the items of a menu (buttons of the plugin stay) | `flarereferrals.admin` |
+| `/referrals layout chest <menu>` | Puts a menu in the empty chest you look at | `flarereferrals.admin` |
+| `/referrals layout remove <name>` | Deletes a menu made with `add` (a copy goes in `backups/`) | `flarereferrals.admin` |
+| `/referrals layout list` | Every menu | `flarereferrals.admin` |
 | `/referrals reload` | Reload all files | `flarereferrals.admin` |
 | `/referrals admin set\|add\|remove <player> <n>` | Edit invites (`add` gives milestones) | `flarereferrals.admin` |
 | `/referrals admin reset\|resetclaimed <player>` | Reset a player | `flarereferrals.admin` |
 | `/referrals migrate <yaml\|sqlite\|mysql> [merge]` | Copy the data to another storage | `flarereferrals.admin` |
-| `/referrals version` | Plugin version, server info and update check (also from the console) | `flarereferrals.command.version` |
+| `/referrals about` | Plugin version (green = latest, red = outdated), server, Java, storage, update notifier, plugin hooks, clickable permission list (`about permissions`). Also `version` / `ver`, also from the console | `flarereferrals.command.version` |
 
 `flarereferrals.bypass` skips the playtime, time limit and same-IP checks.
 
@@ -106,6 +118,36 @@ Main command `/referrals`. Also `/freferrals`, `/fref`, `/freferral` and `/refer
 | `%flarereferrals_claimable%` | milestones waiting to be collected |
 | `%flarereferrals_top_<n>_name%` / `%flarereferrals_top_<n>_invites%` | top inviters |
 
+## Chest builder
+
+Build the menu in a chest (single = 3 rows, double = 6, barrel and shulker box = 3), look at it and type
+`/referrals layout add vip`: the menu is saved in `menus/vip.yml` and players open it with `/vip`.
+Every item keeps its slot, name, lore, enchantments, colors, model data, heads and NBT.
+A head named `{player}` shows the head of the player who opens the menu.
+
+Lore lines that start with `[` are actions or options, they are not shown in the menu:
+
+| Lore line | What it does |
+|---|---|
+| `[close]` `[back]` `[refresh]` | close the menu, open the previous one, draw it again |
+| `[open] <menu>` | open another menu (of the plugin or made with the chest builder) |
+| `[player] <cmd>` / `[console] <cmd>` | run a command as the player / the console (`{player}` and PlaceholderAPI work) |
+| `[chat] <text>` `[message] <text>` `[broadcast] <text>` `[actionbar] <text>` | chat, messages |
+| `[title] title;subtitle;in;stay;out` | title on the screen |
+| `[sound] <sound> [volume] [pitch]` | sound (`entity.player.levelup` or `ENTITY_PLAYER_LEVELUP`) |
+| `[delay] <ticks>` | waits before the next actions |
+| `[server] <name>` | sends the player to another server of the BungeeCord / Velocity network |
+| `[left]` `[right]` `[shift-left]` `[shift-right]` in front of an action | only that click: `[right] [open] top` |
+| `[permission] <node>` | only players with it see the item |
+| `[admin-only]` | only admins see it |
+| `[update]` | drawn again every second (live placeholders) |
+| `[button] <id>` | a button of the plugin goes here: `head`, `milestones`, `referral-rewards`, `collect`, `top`, `settings`, `close`, `back` |
+
+A lore line that must really start with `[` is written `\[`.
+`/referrals layout chest <menu>` puts any menu (also main, top, collect...) in an empty chest, with its actions
+in the lore: change it and read it back with `/referrals layout import <menu>`. Before an import or a remove,
+the old file is copied to `backups/`.
+
 ## Files
 
 | File | Content |
@@ -113,7 +155,7 @@ Main command `/referrals`. Also `/freferrals`, `/fref`, `/freferral` and `/refer
 | `config.yml` | settings, player access, currencies |
 | `rewards.yml` | referral and milestone rewards |
 | `lang/en.yml` | chat messages |
-| `menus/*.yml` | layout and texts of every menu (`admin.yml` = admin menus) |
+| `menus/*.yml` | layout and texts of every menu (`admin.yml` = admin menus), and the menus made with the chest builder |
 | `data.yml` | player data (`storage: yaml`) |
 | `data/data.db` | player data (`storage: sqlite`) |
 
@@ -141,6 +183,28 @@ network:
 Invites, inviters and the top are the same on every server. In `rewards.yml` every reward can be limited
 with `servers: [skyblock]` (default `[all]`). A reward for another server waits there until the player joins it.
 If two servers already had their own data, use `/referrals migrate mysql merge` on the second one.
+
+## Developer API
+
+Add `FlareReferrals` to `softdepend` in your plugin.yml.
+
+```java
+int invites = FlareReferralsAPI.getInvites(player.getUniqueId());
+UUID inviter = FlareReferralsAPI.getInviter(player.getUniqueId());
+List<FlareReferralsAPI.TopEntry> top = FlareReferralsAPI.getTop(10);
+
+@EventHandler
+public void onReferral(ReferralEvent e) {          // before the invite is saved, can be cancelled
+    if (blocked(e.getPlayer())) e.setCancelled(true);
+}
+
+@EventHandler
+public void onInvite(ReferralCompleteEvent e) {    // the invite counts
+    // e.getInviter(), e.getInviterName(), e.getInvites()
+}
+```
+
+Package `dev.tmdevelopment.flarereferrals.api`.
 
 ## Building
 

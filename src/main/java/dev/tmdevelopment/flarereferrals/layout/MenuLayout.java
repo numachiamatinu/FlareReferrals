@@ -15,7 +15,7 @@ import java.util.TreeSet;
  * elements.&lt;id&gt;.slots     "4" or "18-44" or "0-8,45-53" or a list. Empty = hidden.
  * elements.&lt;id&gt;.material  optional override: DIAMOND, head:{player}, head:Notch, texture:&lt;value or id&gt;
  * elements.&lt;id&gt;.name/lore optional override of the texts in lang/en.yml
- * decorations[]: slots + (item | material/name/lore/glow) + actions
+ * decorations[]: slots + (item | material/name/lore/glow) + actions, permission, update, admin-only
  */
 public final class MenuLayout {
 
@@ -42,6 +42,10 @@ public final class MenuLayout {
         public boolean adminOnly;
         public Integer customModelData;
         public List<String> actions = new ArrayList<>();
+        /** Only players with this permission see it ("" = everyone). */
+        public String permission = "";
+        /** Drawn again every second (live placeholders). */
+        public boolean update;
         /** Editor only: the decoration this one was copied from. Never saved. */
         public transient Decoration origin;
     }
@@ -146,7 +150,37 @@ public final class MenuLayout {
         if (cmd instanceof Number) { Number cn = (Number) cmd; d.customModelData = cn.intValue(); }
         Object a = map.get("actions");
         if (a instanceof List<?>) { List<?> list = (List<?>) a; for (Object x : list) d.actions.add(String.valueOf(x)); }
+        Object perm = map.get("permission");
+        if (perm != null) d.permission = String.valueOf(perm).trim();
+        Object up = map.get("update");
+        d.update = up instanceof Boolean && (Boolean) up;
         return d;
+    }
+
+    /** One decoration as it is written in the file (without slots). */
+    public static Map<String, Object> write(Decoration d) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (d.item != null) {
+            map.put("item", d.item);
+        } else {
+            // readable form: every field is there, ready to be edited by hand
+            map.put("material", d.material == null ? "STONE" : d.material);
+            if (d.name != null) map.put("name", d.name); // no name = the Minecraft name of the item
+            map.put("lore", d.lore == null ? new ArrayList<String>() : d.lore);
+            map.put("glow", d.glow);
+            if (d.amount > 1) map.put("amount", d.amount);
+            if (d.customModelData != null) map.put("custom-model-data", d.customModelData);
+        }
+        map.put("admin-only", d.adminOnly);
+        if (d.permission != null && !d.permission.isEmpty()) map.put("permission", d.permission);
+        if (d.update) map.put("update", true);
+        map.put("actions", d.actions);
+        return map;
+    }
+
+    /** Reads a decoration written by {@link #write} (slots, if any, too). */
+    public static Decoration read(Map<?, ?> map) {
+        return readDecoration(map);
     }
 
     public void save(ConfigurationSection s) {
@@ -172,19 +206,7 @@ public final class MenuLayout {
         for (Decoration d : decorations) {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("slots", formatSlots(d.slots));
-            if (d.item != null) {
-                map.put("item", d.item);
-            } else {
-                // readable form: every field is there, ready to be edited by hand
-                map.put("material", d.material == null ? "STONE" : d.material);
-                map.put("name", d.name == null ? " " : d.name);
-                map.put("lore", d.lore == null ? new ArrayList<String>() : d.lore);
-                map.put("glow", d.glow);
-                if (d.amount > 1) map.put("amount", d.amount);
-                if (d.customModelData != null) map.put("custom-model-data", d.customModelData);
-            }
-            map.put("admin-only", d.adminOnly);
-            map.put("actions", d.actions);
+            map.putAll(write(d));
             list.add(map);
         }
         s.set("decorations", list);
@@ -251,6 +273,7 @@ public final class MenuLayout {
     public boolean hadEnabledKey() { return hadEnabledKey; }
     public List<String> openCommands() { return openCommands; }
     public String openPermission() { return openPermission; }
+    public void openPermission(String v) { openPermission = v == null ? "" : v.trim(); }
     public boolean hadOpenCommandsKey() { return hadOpenCommandsKey; }
     public void rows(int v) { rows = Math.max(1, Math.min(6, v)); }
     public Map<String, Element> elements() { return elements; }
