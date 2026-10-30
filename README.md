@@ -46,6 +46,12 @@ played for a while.
 - **Top inviters** menu and chat list, with ranks: PlaceholderAPI placeholders are of the player of each line
   (`%luckperms_prefix%`), also for offline players
 - **Player access**: choose what normal players can open, what they can't use doesn't even show up
+- **Who invited you?** (off by default): a reminder to new players in chat, title, action bar or boss bar, and a
+  button for the main menu, until they write `/referrals <name>`
+- **Invited players** (off by default): `/referrals invited` lists the players you invited, with the date and
+  whether the invite counts already, in a menu with pages or in chat
+- **Reward events** (off by default): `/referrals event start 2 48h` doubles the rewards of the invites made in the
+  next 48 hours, with boss bar, title and messages, on every server of a network
 - **Offline rewards**: kept and given on the next join
 - **Storage**: data.yml (default), SQLite or MySQL / MariaDB, moved with one command (`/referrals migrate`)
 - **Network**: lobby, Skyblock, Survival... behind BungeeCord / Velocity share the same invites, every reward
@@ -90,6 +96,11 @@ Main command `/referrals`. Also `/freferrals`, `/fref`, `/freferral` and `/refer
 | `/referrals top` | Top inviters | `flarereferrals.top` |
 | `/referrals milestone <n>` | What a milestone gives | `flarereferrals.preview` |
 | `/referrals collect` | Rewards waiting to be collected | `flarereferrals.collect` |
+| `/referrals invited [chat]` | The players you invited (needs `player-access.invited: true`) | `flarereferrals.invited` |
+| `/referrals invited <player>` | The players someone else invited | `flarereferrals.info.others` |
+| `/referrals by <player>` | Same as `/referrals <player>`, for inviters called like a command (Top, Menu...) | `flarereferrals.use` |
+| `/referrals event` | The reward event running now (needs `events.enabled: true`) | everyone |
+| `/referrals event start <x> <time> [reason]` / `stop` | Start or stop a reward event, e.g. `start 2 48h` | `flarereferrals.event` |
 | `/referrals claim [n]` | Collect everything waiting (or one milestone), used by the [Collect] buttons | everyone |
 | `/referrals settings` | Admin menu | `flarereferrals.admin` |
 | `/referrals layout [menu]` | Menu editor (main, collect, rewards, top, preview and your own menus) | `flarereferrals.admin` |
@@ -111,12 +122,20 @@ Main command `/referrals`. Also `/freferrals`, `/fref`, `/freferral` and `/refer
 | Placeholder | Value |
 |---|---|
 | `%flarereferrals_invites%` | invites of the player |
+| `%flarereferrals_invited_count%` | players he invited, also the ones still waiting for their playtime |
+| `%flarereferrals_pending_invites%` | invites waiting for `referral.verify-after-minutes` |
 | `%flarereferrals_referrer%` | who invited the player |
-| `%flarereferrals_next_milestone%` | next milestone |
+| `%flarereferrals_referred%` | he entered who invited him (Yes / No) |
+| `%flarereferrals_can_enter%` | he can still enter who invited him (Yes / No) |
+| `%flarereferrals_position%` | position in the top |
+| `%flarereferrals_next_milestone%` | invites of the next milestone (repeating ones too: every 5 with 7 invites = 10) |
 | `%flarereferrals_next_remaining%` | invites missing to the next milestone |
 | `%flarereferrals_claimed%` | milestones reached |
 | `%flarereferrals_claimable%` | milestones waiting to be collected |
-| `%flarereferrals_top_<n>_name%` / `%flarereferrals_top_<n>_invites%` | top inviters |
+| `%flarereferrals_top_<n>_name%` / `_invites` / `_line` | top inviters (`_line` = `placeholders.top-line` in config.yml) |
+| `%flarereferrals_event_active%` / `_multiplier` / `_time` / `_reason` | reward event running now |
+
+Yes / No and the text for nobody are in `config.yml > placeholders`.
 
 ## Chest builder
 
@@ -152,12 +171,13 @@ the old file is copied to `backups/`.
 
 | File | Content |
 |---|---|
-| `config.yml` | settings, player access, currencies |
+| `config.yml` | settings, player access, "who invited you?" reminder, reward events, placeholders, currencies |
 | `rewards.yml` | referral and milestone rewards |
 | `lang/en.yml` | chat messages |
 | `menus/*.yml` | layout and texts of every menu (`admin.yml` = admin menus), and the menus made with the chest builder |
 | `data.yml` | player data (`storage: yaml`) |
 | `data/data.db` | player data (`storage: sqlite`) |
+| `data/event.yml` | the reward event running now (`/referrals event`) |
 
 Every file starts with a short explanation of its options and of the text format.
 
@@ -229,6 +249,9 @@ FlareReferrals also sends a few anonymous settings of its own:
 - `milestones`: number of milestones
 - `storage`: yaml / sqlite / mysql
 - `network`: single server or network
+- `invite_hint`: "who invited you?" reminder On / Off
+- `events`: reward events On / Off
+- `invited_list`: `/referrals invited` On / Off
 
 No player names or UUIDs, no IP addresses (they are never stored), no server names, no chat, world or config data.
 Data of a server is deleted 30 days after its last report; only anonymous totals are kept.

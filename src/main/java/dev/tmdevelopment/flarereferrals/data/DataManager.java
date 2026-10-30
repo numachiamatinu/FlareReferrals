@@ -356,9 +356,20 @@ public final class DataManager {
 
     // ---------------------------------------------------------------- network sync
 
+    private int syncSeconds;
+
     private void startSync() {
-        long ticks = Math.max(1, plugin.getConfig().getInt("network.sync-seconds", 3)) * 20L;
+        syncSeconds = Math.max(1, plugin.getConfig().getInt("network.sync-seconds", 3));
+        long ticks = syncSeconds * 20L;
         syncTask = Bukkit.getScheduler().runTaskTimer(plugin, this::poll, ticks, ticks);
+    }
+
+    /** /referrals reload: a new network.sync-seconds is used right away. */
+    public void reloadSettings() {
+        if (!network || syncTask == null) return;
+        if (Math.max(1, plugin.getConfig().getInt("network.sync-seconds", 3)) == syncSeconds) return;
+        syncTask.cancel();
+        startSync();
     }
 
     private volatile boolean polling;
@@ -426,6 +437,11 @@ public final class DataManager {
         return found;
     }
 
+    /** Every player as it is in memory (read only: placeholders, counts). */
+    public java.util.Collection<PlayerData> snapshotView() {
+        return java.util.Collections.unmodifiableCollection(players.values());
+    }
+
     public int size() {
         return players.size();
     }
@@ -437,6 +453,27 @@ public final class DataManager {
                 ? Integer.compare(b.invites(), a.invites())
                 : a.name().compareToIgnoreCase(b.name()));
         return list.size() > limit ? new ArrayList<>(list.subList(0, limit)) : list;
+    }
+
+    /** Players invited by this player (verified and waiting for the playtime), the newest first. */
+    public List<PlayerData> invitedBy(UUID owner) {
+        List<PlayerData> list = new ArrayList<>();
+        if (owner == null) return list;
+        for (PlayerData d : players.values()) if (owner.equals(d.referredBy())) list.add(d);
+        list.sort((a, b) -> Long.compare(b.referredAt(), a.referredAt()));
+        return list;
+    }
+
+    /** Position of a player in the top (1 = first), 0 when he has no invites. */
+    public int position(UUID uuid) {
+        PlayerData me = uuid == null ? null : players.get(uuid);
+        if (me == null || me.invites() <= 0) return 0;
+        int pos = 1;
+        for (PlayerData d : players.values()) {
+            if (d == me) continue;
+            if (d.invites() > me.invites() || (d.invites() == me.invites() && d.name().compareToIgnoreCase(me.name()) < 0)) pos++;
+        }
+        return pos;
     }
 
     /** Copies of every player (/referrals migrate). */

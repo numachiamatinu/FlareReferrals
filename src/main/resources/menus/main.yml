@@ -123,3 +123,34 @@ texts:
   no-milestones:
     name: "&cNo milestones"
     lore: []
+  # buttons not in the menu by default: add them in the editor (/referrals layout main > empty slot)
+  # who-invited: open = he can write it now, wait = playtime first ({minutes}), done = {referrer}, closed = time over
+  who-invited:
+    open:
+      name: "&#ff7a6bWho invited you?"
+      lore:
+      - "&7Write the name of the player"
+      - "&7who invited you: you both"
+      - "&7get a reward."
+      - ""
+      - "&#ff7a6bClick to write it"
+    wait:
+      name: "&#ff7a6bWho invited you?"
+      lore:
+      - "&7Play &f{minutes} more minutes"
+      - "&7to enter who invited you."
+    done:
+      name: "&aInvited by &f{referrer}"
+      lore:
+      - "&7Thanks for joining!"
+    closed:
+      name: "&7Who invited you?"
+      lore:
+      - "&7The time to enter it is over."
+  # needs player-access.invited: true in config.yml. {amount}
+  invited-list:
+    name: "&#ff7a6bYour invited players"
+    lore:
+    - "&7Invited: &#ff7a6b{amount}"
+    - ""
+    - "&#ff7a6bClick to open"

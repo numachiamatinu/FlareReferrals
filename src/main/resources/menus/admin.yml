@@ -73,6 +73,20 @@ settings:
       name: "&fSounds"
       lore:
       - "&7Menu and reward sounds."
+    invite-hint:
+      name: "&fWho invited you? (reminder)"
+      lore:
+      - "&7Asks new players who invited them"
+      - "&7until they write &f/referrals <name>&7."
+      - "&7Where and how often: &finvite-hint"
+      - "&7in config.yml."
+    events:
+      name: "&fReward events"
+      lore:
+      - "&7Lets admins start an event:"
+      - "&f/referrals event start 2 48h"
+      - "&7= rewards x2 for 48 hours."
+      - "&7Off = nobody can start one."
   playtime:
     name: "&fMinimum playtime"
     lore:
@@ -340,6 +354,11 @@ access:
       lore:
       - "&7/referrals collect: rewards"
       - "&7waiting to be taken."
+    invited:
+      name: "&fYour invited players"
+      lore:
+      - "&7/referrals invited: the players"
+      - "&7you invited, with the date."
   help:
     name: "&#ff7a6bHow it works"
     lore:
@@ -370,6 +389,9 @@ layout:
     collect:
       name: "&fRewards to collect"
       description: "&7/referrals collect"
+    invited:
+      name: "&fYour invited players"
+      description: "&7/referrals invited"
   menu-entry:
   - "{description}"
   - ""
@@ -462,6 +484,10 @@ layout:
     entries: "&fTop players list"
     items: "&fRewards list"
     edit: "&#ff7a6bEdit button (admins)"
+    who-invited: "&#ff7a6bWho invited you (button)"
+    invited-list: "&#ff7a6bYour invited players (button)"
+    previous: "&#ff7a6bPrevious page"
+    next: "&#ff7a6bNext page"
 display:
   title: "&7Screen » {name}"
   off-text: "&7 • off"

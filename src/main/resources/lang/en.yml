@@ -31,6 +31,8 @@ help:
     collect: " &#ff7a6b/{label} collect &7- rewards to collect"
     rewards: " &#ff7a6b/{label} rewards &7- inviter and welcome rewards"
     top: " &#ff7a6b/{label} top &7- top inviters"
+    invited: " &#ff7a6b/{label} invited &7- the players you invited"
+    event: " &#ff7a6b/{label} event &7- the reward event running now"
     milestone: " &#ff7a6b/{label} milestone <n> &7- rewards of a milestone"
     version: " &#ff7a6b/{label} about &7- version, updates and permissions"
   footer: ""
@@ -44,6 +46,7 @@ help:
     - " &#ff7a6b/{label} settings &7- admin menu"
     - " &#ff7a6b/{label} layout &7- edit the menus"
     - " &#ff7a6b/{label} layout add <name> &7- new menu from a chest"
+    - " <click:suggest_command:'/{label} event start '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} event start <x> <time></hover></click> &7- reward event (events.enabled)"
     - " &#ff7a6b/{label} reload &7- reload the files"
     - " <click:suggest_command:'/{label} migrate '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data"
 
@@ -196,6 +199,7 @@ admin:
 # Shown when a command is written incomplete or wrong. Lines are clickable: they fill the chat bar.
 usage:
   milestone: "{prefix}&7Use &#ff7a6b/{label} milestone <amount>"
+  by: "{prefix}&7Use &#ff7a6b/{label} by <player> &7with the name of the player who invited you"
   migrate:
     - "{prefix}&#ff7a6b/{label} migrate <yaml|sqlite|mysql> [merge]"
     - "&7Copies all the data to another storage (set &fstorage.mysql &7in config.yml first)."
@@ -230,6 +234,8 @@ usage:
 
 # Chat prompts used by the menus. {cancel} = cancel word, {seconds} = time limit
 input:
+  who-invited:
+    - " &7Write the &fname &7of the player who invited you to the server:"
   header:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>FLARE</bold></gradient> &7» &fType in chat"
@@ -349,3 +355,75 @@ builder:
 # New version message for admins when they join (update-check in config.yml). {version} {latest} {url}
 update:
   join: "{prefix}&7FlareReferrals &f{latest} &7is out &8(you have {version})&7. <click:open_url:'{url}'><hover:show_text:'&7Open the download page'>&#ff7a6b&n[Download]</hover></click>"
+
+# /referrals invited: the players someone invited (player-access.invited in config.yml)
+# {player} {amount} {verified} {pending} · line: {number} {player} {date} {status}
+invited:
+  header:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>INVITED BY {player}</bold></gradient> &7· {amount} &7({verified} counted, {pending} waiting)"
+  line: " &7{number}. &f{player} &8· &7{date} &8· {status}"
+  empty: " &7Nobody yet. New players who write &#ff7a6b/referrals {player} &7show up here."
+  more: " &7... and &f{amount} &7more. &8(/referrals invited for the menu)"
+  date-format: "dd/MM/yyyy"
+  status:
+    verified: "&a✔ counted"
+    pending: "&#ff7a6b◷ waiting for playtime"
+
+# Reminder to new players (invite-hint in config.yml). {player} {days} = days left to do it
+# chat-days is used when referral.max-days-after-first-join is set
+hint:
+  chat:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>WHO INVITED YOU?</bold></gradient>"
+    - " &7Did a friend invite you? Write <click:suggest_command:'/referrals '><hover:show_text:'&7Click to write it'>&#ff7a6b&n/referrals <name></hover></click>"
+    - " &7and you both get a reward."
+    - ""
+  chat-days:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>WHO INVITED YOU?</bold></gradient>"
+    - " &7Did a friend invite you? Write <click:suggest_command:'/referrals '><hover:show_text:'&7Click to write it'>&#ff7a6b&n/referrals <name></hover></click>"
+    - " &7and you both get a reward. &8(you have {days} days)"
+    - ""
+  title: "&#ff7a6bWho invited you?"
+  subtitle: "&7Write &f/referrals <name>"
+  actionbar: "&7Invited by a friend? &#ff7a6b/referrals <name>"
+  bossbar: "&7Invited by a friend? Write &#ff7a6b/referrals <name>"
+
+# Reward events (/referrals event, events in config.yml)
+# {multiplier} {time} = time left, {reason}, {by} = who started it, {player} = who reads it
+event:
+  started:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>REFERRAL EVENT</bold></gradient>"
+    - " &7Rewards for invites are &#ff7a6b&lx{multiplier} &7for &f{time}&7!"
+    - " &7Tell your friends to join and write &#ff7a6b/referrals {player}"
+    - ""
+  reason: " &7{reason}"
+  ended: "{prefix}&7The referral event &#ff7a6bx{multiplier} &7is over. Thanks for inviting!"
+  title: "&#ff7a6b&lx{multiplier} REFERRAL REWARDS"
+  subtitle: "&7for {time}"
+  bossbar: "&#ff7a6b&lx{multiplier} &frewards for invites &7· {time} left"
+  actionbar: "&#ff7a6bx{multiplier} &7rewards for invites &8· &f{time} &7left"
+  join: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time}&7. <click:run_command:'/referrals event'><hover:show_text:'&7Details'>&#ff7a6b&n[Info]</hover></click>"
+  remind: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time} &7more."
+  status: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7· &f{time} &7left"
+  none: "{prefix}&7No referral event right now."
+  bonus: "{prefix}&#ff7a6bEvent bonus: &fx{multiplier}"
+  units:
+    days: "d"
+    hours: "h"
+    minutes: "m"
+    seconds: "s"
+  admin:
+    usage:
+      - "{prefix}<click:suggest_command:'/{label} event start '><hover:show_text:'&7Click to write it'>&#ff7a6b/{label} event start <multiplier> <time> [reason]</hover></click>"
+      - "&7Ex: &#ff7a6b/{label} event start 2 48h Weekend! &7· times: 30m, 2h, 1d, 1h30m"
+      - "<click:run_command:'/{label} event stop'><hover:show_text:'&7Click to stop it'>&#ff7a6b/{label} event stop</hover></click> &7- ends it now"
+    started: "{prefix}&aEvent started: &fx{multiplier} &afor &f{time}&a."
+    stopped: "{prefix}&aEvent stopped."
+    replaced: "{prefix}&7The event running (&fx{multiplier}&7, {time} left) is replaced by the new one."
+    not-running: "{prefix}&7No event is running."
+    disabled: "{prefix}&cEvents are off. &7Turn them on in &f/referrals settings &7or with &fevents.enabled: true &7in config.yml."
+    bad-multiplier: "{prefix}&f{input} &cis not a valid multiplier. &7Use a number above 1 and up to {max}, e.g. 2 or 1.5."
+    bad-time: "{prefix}&f{input} &cis not a valid time. &7Examples: 30m, 2h, 1d, 1h30m."

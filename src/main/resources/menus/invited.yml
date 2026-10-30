@@ -1,0 +1,96 @@
+#  Flare Referrals · menu 'invited' (/referrals invited: the players someone invited)
+#  In-game: /referrals settings > Menu layouts   (drag & drop · close = save)
+#  Chest:   /referrals layout chest <menu> puts it in a chest, /referrals layout import <menu> reads it back
+#
+#  enabled         false = menu off for everyone
+#  rows            size of the menu: 1-6 rows (9-54 slots)
+#  open-commands   [rewards] → /rewards opens it   ·   open-permission: "" = everyone
+#  slots           "4"  "19-25"  "0-8,45-53"   (row 1 = 0-8, row 2 = 9-17 ...)
+#  material        DIAMOND · head:{player} · head:Notch · texture:<minecraft-heads value>
+#  admin-only      true = players don't see it
+#  permission      "node" = only players with it see the item ("" = everyone)
+#  update          true = drawn again every second (live placeholders)
+#  actions         [close] [open] <menu> [back] [refresh] [player] cmd [console] cmd [chat] text
+#                  [message] text [broadcast] text [actionbar] text [title] title;subtitle;in;stay;out
+#                  [sound] key [volume] [pitch] [delay] ticks [server] name
+#                  [left] / [right] / [shift-left] / [shift-right] in front = only that click
+#
+#  ── Format ──────────────────────────────────────────────
+#  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
+#  Hex       "&#ff5f6dText"
+#  Gradient  "<gradient:#ff5f6d:#ffc371>Text</gradient>"   Rainbow "<rainbow>Text</rainbow>"
+#  Click     "<click:run_command:'/referrals menu'>Text</click>"   Hover "<hover:show_text:'Text'>Text</hover>"
+#  Tip       always write texts between "quotes"
+
+
+enabled: true
+open-commands: []
+open-permission: ""
+title: "<gradient:#ff5f6d:#ffc371>Invited players</gradient>"
+rows: 6
+elements:
+  head:
+    # placeholders: {player} {amount} {verified} {pending} {page} {pages}
+    slots: "4"
+    admin-only: false
+    material: "head:{player}"
+    name: "&f{player}"
+    lore:
+      - "&7Invited: &#ff7a6b{amount}"
+      - "&7Counted: &a{verified}"
+      - "&7Waiting for playtime: &#ff7a6b{pending}"
+  entries:
+    # list of players, the newest first (more pages when they don't fit)
+    # name / lore placeholders: {number} {player} {date} {status} {online}
+    slots: "19-25,28-34,37-43"
+    admin-only: false
+    name: "&f{player}"
+    lore:
+      - "&7Joined with your name: &f{date}"
+      - "{status}"
+      - "{online}"
+  previous:
+    # shown only when there is a page before. {page} {pages}
+    slots: "48"
+    admin-only: false
+    material: "ARROW"
+    name: "&#ff7a6b← Previous page"
+    lore:
+      - "&7Page {page}/{pages}"
+  next:
+    slots: "50"
+    admin-only: false
+    material: "ARROW"
+    name: "&#ff7a6bNext page →"
+    lore:
+      - "&7Page {page}/{pages}"
+  back:
+    slots: "49"
+    admin-only: false
+    material: "ARROW"
+    name: "&c← Back"
+    lore: []
+decorations:
+  - slots: "0-3,5-8,9,17,18,26,27,35,36,44,45-47,51-53"
+    material: "RED_STAINED_GLASS_PANE"
+    name: " "
+    lore: []
+    glow: false
+    admin-only: false
+    actions: []
+
+# ── Texts of this menu ──
+# empty = shown when nobody wrote /referrals <name> with this player yet
+texts:
+  empty:
+    name: "&7Nobody yet"
+    lore:
+      - "&7New players who write"
+      - "&#ff7a6b/referrals {player}"
+      - "&7show up here."
+  status:
+    verified: "&a✔ The invite counts"
+    pending: "&#ff7a6b◷ Counts after their playtime"
+  online: "&aOnline now"
+  offline: "&7Offline"
+  date-format: "dd/MM/yyyy"

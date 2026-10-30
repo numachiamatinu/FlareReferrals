@@ -2,6 +2,61 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.0.23
+### New (all off until you turn them on)
+- **Who invited you?** `invite-hint` in config.yml (or `/referrals settings`): new players who didn't write
+  `/referrals <name>` yet get a reminder, in chat (clickable), title, action bar, boss bar and with a sound, as you
+  choose. First one after `delay-seconds`, again every `repeat-minutes`, at most `max-per-join` times, only for
+  players who joined in the last `only-new-days` days (and only on the first join with `only-first-join`). With a
+  minimum playtime it starts once they played enough; it stops when they wrote it or when
+  `max-days-after-first-join` is over. Admins never get it. Texts in `lang/en.yml > hint`.
+  New button for the main menu, "Who invited you?" (`who-invited`, add it in the editor): click and write the name
+  in chat. It shows who invited you once done, or how many minutes to play first.
+- **Invited players**: `/referrals invited` (menu with pages, `/referrals invited chat` in chat) lists the players
+  you invited, the newest first, with the date and whether the invite counts already. Staff: `/referrals invited
+  <player>` (`flarereferrals.info.others`). Turn it on with `player-access.invited: true` (or in Player access),
+  new menu `menus/invited.yml`, new button `invited-list` for the main menu. Permission `flarereferrals.invited`.
+- **Reward events**: `/referrals event start <multiplier> <time> [reason]` (e.g. `2 48h Weekend!`) multiplies the
+  rewards of the invites made during the event: currencies (money, tokens, XP levels...) and, if you want, items.
+  Choose which rewards (inviter, welcome, milestones). Message, title and sound when it starts, boss bar with the
+  time left, action bar and reminders if you want, a message to players who join. A reward keeps its multiplier
+  also when it is collected later, and an invite that counts later (playtime) keeps the event of the moment it was
+  made. `/referrals event stop`, `/referrals event` for the time left. Survives restarts and runs on every server
+  of a network. Needs `events.enabled: true`, permission `flarereferrals.event` (admins have it).
+- **New placeholders**: `position`, `invited_count`, `pending_invites`, `referred`, `can_enter`, `top_<n>_line`,
+  `event_active`, `event_multiplier`, `event_time`, `event_reason`. Their texts are in `config.yml > placeholders`.
+- `/referrals by <player>`: works also for inviters called like a command (Top, Menu, Help...). A player called
+  like a command the new player can't use (Admin, Reload...) can now be entered with `/referrals <name>` too.
+- `%luckperms_primary_group_name%` works in the top for offline players too, and without PlaceholderAPI
+  the LuckPerms prefix, suffix and group are filled by the plugin itself.
+
+### Improved
+- Saving from the in-game editors and `/referrals settings` changes only the values that changed in `menus/`,
+  `rewards.yml` and `config.yml`: your quotes, comments and layout stay as you wrote them (before, the whole file
+  was written again and on 1.16.5 - 1.17 its comments were lost). New options of an update are written with
+  their explanation also on 1.16.5 - 1.17.
+- New texts of an update are added to `lang/en.yml` and `menus/admin.yml` with their explanation, and the rest of
+  the file stays as it is: on 1.16.5 - 1.17 their comments (yours too) were lost at every update.
+- Comments you write above the first option of a file (also above the explanation of the plugin) stay.
+- Starting an event while another one runs tells the admin it was replaced. The collect menu shows the amounts of a
+  reward earned in an event already multiplied.
+- data.yml is written in the background and once for all the changes of the same moment: no more lag spikes on
+  servers with many players.
+
+### Fixed
+- A player could make PlaceholderAPI placeholders show their value by writing them as a name
+  (`/referrals %placeholder%`): names are now checked and what players type is never read as placeholders or colors.
+- A name that doesn't exist made the server read every saved player from the disk: on big servers writing
+  `/referrals <random>` again and again caused lag.
+- Repeating milestones ("every 5 invites") were given again for the same number after an admin removed invites.
+- `/referrals admin resetclaimed` also deleted rewards still waiting in the collect menu: now only received
+  milestones are forgotten, as the help says.
+- Network (MySQL): two players on two servers could invite each other at the same moment and both get the rewards.
+- `%flarereferrals_next_milestone%` showed the step of a repeating milestone (5) instead of the next number (10).
+- Rewards written by hand like `ENDER_PEARL:64` or `DIAMOND_SWORD:3` could end in one slot on some servers: they
+  are given in normal stacks.
+- `network.sync-seconds` changed with `/referrals reload` is used right away.
+
 ## 1.0.22
 - **Chest builder**: build a menu in a real chest (single, double, trapped chest, barrel, shulker box), look at it
   and type `/referrals layout add <name>`. The menu is saved in `menus/<name>.yml` and opens with `/<name>`.

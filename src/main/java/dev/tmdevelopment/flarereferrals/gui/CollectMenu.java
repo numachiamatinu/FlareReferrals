@@ -92,8 +92,14 @@ public final class CollectMenu extends LayoutMenu {
             for (String line : ok ? loreTpl : elsewhereTpl) {
                 // unknown date (rewards converted by older versions): no "Since" line
                 if (e.created() <= 0 && (line.contains("{date}") || line.contains("%date%"))) continue;
-                if (line.trim().equals("{preview}") || line.trim().equals("%preview%")) lore.addAll(preview(set));
+                if (line.trim().equals("{preview}") || line.trim().equals("%preview%")) lore.addAll(preview(set, multiplierOf(parts)));
                 else lore.add(Text.item(Text.replace(line, ph), viewer));
+            }
+            // earned during a reward event: the multiplier it keeps
+            double bonus = dev.tmdevelopment.flarereferrals.service.ReferralEvents.parse(parts.length > 3 ? parts[3] : null);
+            if (plugin.referrals().multiplies(set, bonus)) {
+                lore.addAll(lang().lore("gui.collect.bonus", viewer, "%multiplier%",
+                        dev.tmdevelopment.flarereferrals.service.ReferralEvents.format(bonus)));
             }
             items.add(new ItemBuilder(icon(e, set, ok))
                     .name(Text.item(Text.replace(nameTpl, ph), viewer))
@@ -151,7 +157,14 @@ public final class CollectMenu extends LayoutMenu {
     }
 
     /** Short list of what the reward gives: items, currencies, extra rewards. */
-    private List<Component> preview(RewardSet set) {
+    private static double multiplierOf(String[] parts) {
+        return dev.tmdevelopment.flarereferrals.service.ReferralEvents.parse(parts.length > 3 ? parts[3] : null);
+    }
+
+    /** What the reward gives, with the amounts of the event it was earned in (x2 = the doubled amounts). */
+    private List<Component> preview(RewardSet set, double multiplier) {
+        int itemsX = plugin.referrals().multiplierItems(multiplier);
+        double moneyX = plugin.referrals().currencyMultiplier(multiplier);
         List<Component> out = new ArrayList<>();
         int shown = 0;
         for (ItemStack it : set.items()) {
@@ -160,7 +173,7 @@ public final class CollectMenu extends LayoutMenu {
             ItemMeta meta = it.hasItemMeta() ? it.getItemMeta() : null;
             String name = meta != null && meta.hasDisplayName() ? meta.getDisplayName()
                     : it.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ');
-            out.add(Text.item(Text.replace(lang().raw("gui.collect.preview-item"), "%amount%", String.valueOf(it.getAmount()),
+            out.add(Text.item(Text.replace(lang().raw("gui.collect.preview-item"), "%amount%", String.valueOf(it.getAmount() * itemsX),
                     "%item%", dev.tmdevelopment.flarereferrals.util.Platform.toEditable(name)), viewer));
         }
         int items = 0;
@@ -171,7 +184,7 @@ public final class CollectMenu extends LayoutMenu {
         for (Map.Entry<String, Double> c : set.currencies().entrySet()) {
             if (plugin.currencies().get(c.getKey()) == null) continue; // turned off: not given, not shown
             out.add(Text.item(Text.replace(lang().raw("gui.collect.preview-currency"), "%currency%",
-                    plugin.currencies().display(c.getKey(), c.getValue())), viewer));
+                    plugin.currencies().display(c.getKey(), c.getValue() * moneyX)), viewer));
         }
         if (!set.commands().isEmpty()) out.add(Text.item(lang().raw("gui.collect.preview-extra"), viewer));
         if (out.isEmpty()) out.add(Text.item(lang().raw("gui.collect.preview-empty"), viewer));

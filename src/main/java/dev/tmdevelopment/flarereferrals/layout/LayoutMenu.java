@@ -95,6 +95,11 @@ public abstract class LayoutMenu extends Menu {
         return new String[]{"%player%", viewer.getName()};
     }
 
+    /** Whose head "head:{player}" shows: the viewer, or the player the menu is about. */
+    protected org.bukkit.OfflinePlayer headOwner() {
+        return viewer;
+    }
+
     @Override
     protected Component title() {
         if (editMode) return lang().title("gui.layout.editor-title", viewer, "%menu%", layoutId);
@@ -171,7 +176,14 @@ public abstract class LayoutMenu extends Menu {
         List<Integer> slots = slots(id);
         if (slots.isEmpty()) return;
         String[] ph = concat(titlePlaceholders(), placeholders);
-        ItemStack item = e.material == null ? null : ItemSpec.build(plugin, e.material, viewer);
+        org.bukkit.OfflinePlayer owner = headOwner();
+        ItemStack item;
+        if (e.material != null && owner != null && !viewer.getUniqueId().equals(owner.getUniqueId())
+                && e.material.trim().toLowerCase(java.util.Locale.ROOT).matches("head:\\s*(\\{player\\}|%player%)")) {
+            item = dev.tmdevelopment.flarereferrals.util.Heads.of(owner);
+        } else {
+            item = e.material == null ? null : ItemSpec.build(plugin, e.material, viewer);
+        }
         if (item == null) item = base;
         String name = e.name != null ? e.name : lang().raw(langPath + ".name");
         List<String> lore = e.lore != null ? e.lore : lang().lines(langPath + ".lore");

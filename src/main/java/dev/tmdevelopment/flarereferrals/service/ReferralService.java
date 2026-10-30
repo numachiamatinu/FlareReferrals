@@ -53,9 +53,16 @@ public final class ReferralService {
         boolean invitedMenu;
         boolean queue;
         final List<int[]> list = new ArrayList<>();
+        /** Reward event running now: "|x2" added to the rewards it multiplies ("" = none). */
+        String bonusInviter = "", bonusWelcome = "", bonusMilestones = "";
     }
 
     private Rules rules() {
+        return rules(System.currentTimeMillis());
+    }
+
+    /** @param inviteTime when the invite was made (the reward event of that moment) */
+    private Rules rules(long inviteTime) {
         Rules r = new Rules();
         r.milestones = cfg().getBoolean("milestones.enabled", true);
         r.inviter = plugin.rewards().inviter().enabled();
@@ -63,6 +70,9 @@ public final class ReferralService {
         r.inviterMenu = inMenu(plugin.rewards().inviter());
         r.invitedMenu = inMenu(plugin.rewards().invited());
         r.queue = plugin.data().network() || cfg().getBoolean("rewards.offline-queue", true);
+        r.bonusInviter = plugin.events().bonus("inviter", inviteTime);
+        r.bonusWelcome = plugin.events().bonus("welcome", inviteTime);
+        r.bonusMilestones = plugin.events().bonus("milestones", inviteTime);
         // turned off rewards are saved too: they wait and are given when the reward is turned on again
         for (Milestone m : plugin.rewards().milestoneList()) {
             r.list.add(new int[]{m.amount(), m.repeat() ? 1 : 0, inMenu(m) ? 1 : 0, m.enabled() ? 1 : 0});
@@ -101,6 +111,12 @@ public final class ReferralService {
             return;
         }
 
+        // not a name a player can have: nothing to look up (and the text is never shown as it was typed)
+        if (!Text.validName(targetName)) {
+            lang().send(user, "referral.not-found", "%player%", Text.safe(targetName));
+            sound(user, "error");
+            return;
+        }
         // the inviter: anyone with data (on a network: any server), or a player this server knows
         PlayerData targetData = plugin.data().byName(targetName);
         UUID targetId;
@@ -182,10 +198,12 @@ public final class ReferralService {
 
         busy.add(userId);
         plugin.data().run(ops -> {
+            // first of all: the two players are locked (MySQL), so the checks below see what other servers saved
+            UUID targetRef = ops.lockPair(userId, targetId);
             ops.touch(userId, userName, myIp, first);
             if (!known || ops.player(targetId) == null) ops.touch(targetId, targetReal, null, 0);
             PlayerData t = ops.player(targetId);
-            if (circular && t != null && userId.equals(t.referredBy())) return new Outcome(CIRCULAR);
+            if (circular && (userId.equals(targetRef) || (t != null && userId.equals(t.referredBy())))) return new Outcome(CIRCULAR);
             if (sameIp && myIp != null && (myIp.equals(targetIpNow) || (t != null && myIp.equals(t.ipHash())))) return new Outcome(SAME_IP);
             if (!ops.setReferrer(userId, targetId, now, pending ? PlayerData.PENDING : PlayerData.VERIFIED)) {
                 return new Outcome(ALREADY);
@@ -241,15 +259,15 @@ public final class ReferralService {
         Outcome out = new Outcome(OK);
         out.invites = ops.addInvites(target, 1);
         // r.inviter / r.invited = turned on: a turned off reward is saved anyway and waits (no message now)
-        RewardEntry ue = ops.addReward(user, "referral:invited", "referral:invited" + ctx,
+        RewardEntry ue = ops.addReward(user, "referral:invited", "referral:invited" + ctx + r.bonusWelcome,
                 r.invitedMenu ? RewardEntry.State.CLAIMABLE : RewardEntry.State.PENDING);
         if (ue != null && r.invitedMenu && r.invited) out.readyUser.add(ue);
         if (targetQueue || r.inviterMenu) {
-            RewardEntry e = ops.addReward(target, "referral:inviter@" + user, "referral:inviter" + ctx,
+            RewardEntry e = ops.addReward(target, "referral:inviter@" + user, "referral:inviter" + ctx + r.bonusInviter,
                     r.inviterMenu ? RewardEntry.State.CLAIMABLE : RewardEntry.State.PENDING);
             if (e != null && r.inviterMenu && r.inviter) out.ready.add(e);
         }
-        milestones(ops, r, target, out.invites, ctx, targetQueue, out);
+        milestones(ops, r, target, out.invites, ctx + r.bonusMilestones, targetQueue, out);
         return out;
     }
 
@@ -262,22 +280,42 @@ public final class ReferralService {
             String uniq;
             if (repeat) {
                 if (invites <= 0 || invites % amount != 0) continue;
-                // only the server that raised the invites to this number gets here: every time is a new reward
-                uniq = "milestone:" + amount + "@" + invites + "-" + Long.toString(System.nanoTime() & 0xffffffL, 36)
-                        + Integer.toString(java.util.concurrent.ThreadLocalRandom.current().nextInt(1 << 20), 36);
+                // one reward for each number: reaching 10 again (after an admin removed invites) gives nothing twice
+                uniq = "milestone:" + amount + "@" + invites;
+                if (reachedBefore(ops.player(target), uniq)) continue;
             } else {
                 if (invites < amount) continue;
                 uniq = "milestone:" + amount;
             }
             RewardEntry.State state = m[2] == 1 ? RewardEntry.State.CLAIMABLE : RewardEntry.State.PENDING;
             if (state == RewardEntry.State.PENDING && !queue) {
-                // offline and the queue is off: lost, like before. A non repeating milestone counts as reached anyway
-                if (!repeat) ops.addReward(target, uniq, "milestone:" + amount + ctx, RewardEntry.State.DELIVERED);
+                // offline and the queue is off: lost, like before. The milestone counts as reached anyway
+                ops.addReward(target, uniq, "milestone:" + amount + ctx, RewardEntry.State.DELIVERED);
                 continue;
             }
             RewardEntry e = ops.addReward(target, uniq, "milestone:" + amount + ctx, state);
             if (e != null && state == RewardEntry.State.CLAIMABLE && m[3] == 1) out.ready.add(e);
         }
+    }
+
+    /** Money and other currencies of a reward earned during an event: multiplied when events.multiply.currencies is on. */
+    public double currencyMultiplier(double m) {
+        return m > 1 && cfg().getBoolean("events.multiply.currencies", true) ? m : 1.0;
+    }
+
+    /** Items are multiplied by an event only when events.multiply.items is on, and only by whole numbers. */
+    public int multiplierItems(double m) {
+        if (m < 2 || !cfg().getBoolean("events.multiply.items", false)) return 1;
+        return (int) Math.floor(m);
+    }
+
+    /** This number of a repeating milestone was already rewarded (1.0.22 and older added a random part to the key). */
+    private static boolean reachedBefore(PlayerData d, String uniq) {
+        if (d == null) return false;
+        for (RewardEntry e : d.rewards()) {
+            if (e.uniq().equals(uniq) || e.uniq().startsWith(uniq + "-")) return true;
+        }
+        return false;
     }
 
     /** Messages + rewards after an invite counted (also after a verification). */
@@ -319,7 +357,7 @@ public final class ReferralService {
         PlayerData td = plugin.data().get(targetId);
         String targetReal = td == null ? "?" : td.name();
         String userName = p.getName();
-        Rules r = rules();
+        Rules r = rules(d.referredAt() > 0 ? d.referredAt() : System.currentTimeMillis());
         boolean targetQueue = r.queue || Bukkit.getPlayer(targetId) != null;
         String ctx = "|" + targetReal + "|" + userName;
         plugin.data().run(ops -> {
@@ -446,7 +484,7 @@ public final class ReferralService {
     public boolean collectEntry(Player p, RewardEntry e, Runnable after) {
         if (giving.contains(e.id()) || e.state() != RewardEntry.State.CLAIMABLE) return false;
         RewardSet set = plugin.rewards().resolve(e.key());
-        if (set != null && set.enabled() && allowedHere(set) && !fits(p, set)) {
+        if (set != null && set.enabled() && allowedHere(set) && !fits(p, set, e)) {
             lang().send(p, "collect.inventory-full", "%reward%", rewardName(e));
             sound(p, "error");
             return false;
@@ -458,10 +496,28 @@ public final class ReferralService {
     }
 
     /** Free inventory slots for the items of a reward (very big rewards are dropped as before). */
-    private boolean fits(Player p, RewardSet set) {
-        int items = itemCount(set);
+    private boolean fits(Player p, RewardSet set, RewardEntry e) {
+        int items = itemCount(set, e);
         if (items == 0 || items > 36) return true;
         return freeSlots(p) >= items;
+    }
+
+    /** Slots for the items of this reward, also when an event multiplies them. */
+    private int itemCount(RewardSet set, RewardEntry e) {
+        return itemCount(set) * multiplierItems(multiplierOf(e));
+    }
+
+    /** Multiplier of a reward earned during a reward event (1 = none). */
+    public static double multiplierOf(RewardEntry e) {
+        String[] parts = e.reward().split("\\|", -1);
+        return parts.length > 3 ? ReferralEvents.parse(parts[3]) : 1.0;
+    }
+
+    /** True when an event multiplier really changes this reward (its currencies, or its items). */
+    public boolean multiplies(RewardSet set, double m) {
+        if (m <= 1.0) return false;
+        if (!set.currencies().isEmpty() && cfg().getBoolean("events.multiply.currencies", true)) return true;
+        return multiplierItems(m) > 1 && !set.items().isEmpty();
     }
 
     /** Inventory slots the items of a reward need (an amount above the stack size needs more slots). */
@@ -522,7 +578,7 @@ public final class ReferralService {
             if (set == null || !set.enabled() || !allowedHere(set)) continue;
             found++;
             if (giving.contains(e.id())) continue; // already being collected (double click)
-            int need = itemCount(set);
+            int need = itemCount(set, e);
             if (need > 36) need = 0;
             if (need > free) {
                 full = true;
@@ -597,7 +653,7 @@ public final class ReferralService {
     /** Admin add: one by one so repeating milestones trigger correctly. {@code done} gets the new amount (-1 = error). */
     public void addInvites(PlayerData data, int amount, IntConsumer done) {
         UUID target = data.uuid();
-        Rules r = rules();
+        Rules r = rules(0); // invites added by an admin: no event bonus
         boolean queue = r.queue || Bukkit.getPlayer(target) != null;
         String ctx = "|" + data.name() + "|-";
         plugin.data().run(ops -> {
@@ -708,7 +764,7 @@ public final class ReferralService {
             for (RewardEntry e : taken) {
                 RewardSet set = plugin.rewards().resolve(e.key());
                 if (set != null && from == RewardEntry.State.CLAIMABLE) {
-                    int need = itemCount(set);
+                    int need = itemCount(set, e);
                     if (need > 36) need = 0;
                     if (need > free) {
                         // the inventory filled up meanwhile: back in the menu
@@ -786,6 +842,8 @@ public final class ReferralService {
         String[] parts = keyWithCtx.split("\\|", -1);
         String inviter = parts.length > 1 ? parts[1] : "";
         String invited = parts.length > 2 ? parts[2] : "";
+        // earned during a reward event (/referrals event): "x2"
+        double multiplier = parts.length > 3 ? ReferralEvents.parse(parts[3]) : 1.0;
         PlayerData d = plugin.data().get(p.getUniqueId());
         String milestone = set instanceof Milestone ? String.valueOf(((Milestone) set).amount()) : "";
         String[] ph = {
@@ -794,19 +852,30 @@ public final class ReferralService {
                 "%invites%", String.valueOf(d == null ? 0 : d.invites()),
                 "%milestone%", milestone,
                 "%inviter%", inviter,
-                "%invited%", invited
+                "%invited%", invited,
+                "%multiplier%", ReferralEvents.format(multiplier)
         };
 
         boolean drop = cfg().getBoolean("rewards.drop-if-full", true);
         for (ItemStack it : set.items()) {
             if (it == null || it.getType().isAir()) continue;
-            Map<Integer, ItemStack> left = p.getInventory().addItem(it.clone());
-            if (drop) {
-                for (ItemStack l : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), l);
+            // given in stacks the item can really have ("ENDER_PEARL:64" = 4 stacks of 16, "DIAMOND_SWORD:3" = 3 swords):
+            // some servers would put them all in one slot
+            int max = Math.max(1, it.getMaxStackSize());
+            int total = Math.max(1, it.getAmount()) * multiplierItems(multiplier);
+            while (total > 0) {
+                ItemStack one = it.clone();
+                one.setAmount(Math.min(max, total));
+                total -= one.getAmount();
+                Map<Integer, ItemStack> left = p.getInventory().addItem(one);
+                if (drop) {
+                    for (ItemStack l : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), l);
+                }
             }
         }
+        double money = currencyMultiplier(multiplier);
         for (Map.Entry<String, Double> e : set.currencies().entrySet()) {
-            plugin.currencies().give(p, e.getKey(), e.getValue());
+            plugin.currencies().give(p, e.getKey(), e.getValue() * money);
         }
         for (String cmd : set.commands()) {
             String c = Text.replace(cmd, ph);
@@ -820,9 +889,11 @@ public final class ReferralService {
         }
         ScreenEffects.show(plugin, p, set.display(), ph);
         sound(p, "reward");
+        if (multiplies(set, multiplier)) lang().send(p, "event.bonus", "%multiplier%", ReferralEvents.format(multiplier));
         String what = set instanceof Milestone ? "milestone " + milestone : parts[0].startsWith("referral:inviter") ? "inviter reward"
                 : parts[0].startsWith("referral:invited") ? "welcome reward" : parts[0];
-        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (invited.isEmpty() || set instanceof Milestone ? "" : " (" + inviter + " <- " + invited + ")"));
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (invited.isEmpty() || set instanceof Milestone ? "" : " (" + inviter + " <- " + invited + ")")
+                + (multiplies(set, multiplier) ? " x" + ReferralEvents.format(multiplier) + " (event)" : ""));
     }
 
     // ------------------------------------------------------------------ network
@@ -885,6 +956,8 @@ public final class ReferralService {
             Player p = Bukkit.getPlayer(target);
             int i = data.indexOf(SEP);
             if (p != null && i > 0) collectNotice(p, data.substring(0, i), data.substring(i + 1), true);
+        } else if ("event".equals(type)) {
+            plugin.events().remote(data);
         } else if ("bc".equals(type)) {
             dev.tmdevelopment.flarereferrals.util.Platform.broadcast(Text.parse(data, null));
         }

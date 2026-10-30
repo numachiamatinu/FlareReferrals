@@ -37,12 +37,34 @@ public final class Headers {
             } catch (Exception broken) {
                 return; // a file with a mistake is never touched (the mistake is reported when it is loaded)
             }
-            String[] parts = split(text);
-            if (parts[0].equals(header)) return;
-            dev.tmdevelopment.flarereferrals.util.J8.write(file.toPath(), header + parts[1], StandardCharsets.UTF_8);
+            String fresh = withHeader(text.replace("\r\n", "\n"), header);
+            if (fresh.equals(text.replace("\r\n", "\n"))) return;
+            dev.tmdevelopment.flarereferrals.util.J8.write(file.toPath(), fresh, StandardCharsets.UTF_8);
         } catch (Exception e) {
             plugin.getLogger().warning("Could not update the explanations of " + file.getName() + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * The file with the header of the jar. Only the lines of the plugin header are replaced ("#  ..." and "#"):
+     * comments written by the owner above the first option (also above the header) stay, right after the header.
+     */
+    static String withHeader(String text, String header) {
+        String[] lines = text.split("\n", -1);
+        int i = 0;
+        StringBuilder own = new StringBuilder();
+        while (i < lines.length && (lines[i].startsWith("#") || dev.tmdevelopment.flarereferrals.util.J8.blank(lines[i]))) {
+            String l = lines[i];
+            boolean plugin = l.equals("#") || l.startsWith("#  ") || dev.tmdevelopment.flarereferrals.util.J8.blank(l);
+            if (!plugin) own.append(l).append('\n');
+            i++;
+        }
+        StringBuilder rest = new StringBuilder();
+        for (int k = i; k < lines.length; k++) {
+            rest.append(lines[k]);
+            if (k < lines.length - 1) rest.append('\n');
+        }
+        return header + own + rest;
     }
 
     /** [header incl. trailing empty line, rest of the file]. */

@@ -10,7 +10,7 @@ commands:
   referrals:
     description: FlareReferrals main command
     aliases: [freferrals, fref, freferral, referral]
-    usage: /referrals <player|info|menu|collect|rewards|top|milestone|about>
+    usage: /referrals <player|info|menu|collect|rewards|top|invited|milestone|event|about>
 
 permissions:
   flarereferrals.use:
@@ -34,8 +34,11 @@ permissions:
   flarereferrals.collect:
     description: /referrals collect (also needs player-access.collect)
     default: true
+  flarereferrals.invited:
+    description: /referrals invited, the players you invited (also needs player-access.invited, off by default)
+    default: true
   flarereferrals.info.others:
-    description: See the referral info of other players
+    description: See the referral info and the invited players of other players
     default: op
   flarereferrals.admin:
     description: /referrals settings, rewards and menu editors, chest builder (layout), reload, migrate, admin commands
@@ -43,6 +46,10 @@ permissions:
     children:
       flarereferrals.info.others: true
       flarereferrals.command.version: true
+      flarereferrals.event: true
+  flarereferrals.event:
+    description: /referrals event start / stop, reward events (also needs events.enabled in config.yml)
+    default: op
   flarereferrals.command.version:
     description: /referrals about (or version) - plugin version, update check and permission list
     default: op

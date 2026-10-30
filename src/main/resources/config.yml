@@ -75,6 +75,13 @@ player-access:
   preview: true
   # /referrals collect (rewards waiting to be collected)
   collect: true
+  # /referrals invited (the players you invited, with the date): off until you turn it on.
+  # Add the "Your invited players" button to /referrals menu in its editor (Menu layouts > main)
+  invited: false
+
+invited:
+  # Players listed by /referrals invited chat (the menu has pages)
+  chat-lines: 20
 
 milestones:
   # Give milestone rewards (every 3 / 5 / 10 ... invites)
@@ -109,6 +116,99 @@ input:
   cancel-word: "cancel"
   # Seconds before a chat prompt expires
   timeout-seconds: 60
+
+# ── Who invited you? ────────────────────────────────────
+# Asks new players who invited them until they write /referrals <name>, or until they can't anymore
+# (referral.max-days-after-first-join). Admins never get it. Off by default. Texts in lang/en.yml > hint.
+# In a menu: add the "Who invited you" button to /referrals menu in its editor (Menu layouts > main).
+# Anywhere else (scoreboard, hologram, tab): %flarereferrals_referred% and %flarereferrals_can_enter%
+invite-hint:
+  enabled: false
+  # Only players who joined the server for the first time in the last X days. 0 = every player without an inviter
+  only-new-days: 7
+  # true = only on their very first join
+  only-first-join: false
+  # First reminder this many seconds after joining
+  delay-seconds: 15
+  # Again every X minutes while they are online. 0 = once per join
+  repeat-minutes: 10
+  # At most X reminders per join. 0 = no limit
+  max-per-join: 3
+  # With referral.min-playtime-minutes: the reminders start only once they played enough
+  wait-for-playtime: true
+  # Where it is shown (any combination)
+  show:
+    chat: true
+    title: false
+    actionbar: false
+    bossbar: false
+    # "" = no sound
+    sound: "block.note_block.pling"
+  # Ticks (20 = 1 second)
+  title:
+    fade-in: 10
+    stay: 70
+    fade-out: 20
+  # color: PINK BLUE RED GREEN YELLOW PURPLE WHITE   style: PROGRESS NOTCHED_6 NOTCHED_10 NOTCHED_12 NOTCHED_20
+  bossbar:
+    color: PINK
+    style: PROGRESS
+    seconds: 10
+
+# ── Reward events ───────────────────────────────────────
+# /referrals event start <multiplier> <time> [reason]   e.g. /referrals event start 2 48h Weekend!
+# Rewards earned with an invite during the event are multiplied (they keep it also when collected later).
+# Off by default: with enabled: false nobody can start one. On a network the event runs on every server.
+# Texts in lang/en.yml > event. Placeholders: %flarereferrals_event_active% _multiplier _time _reason
+events:
+  enabled: false
+  # Highest multiplier an admin can use
+  max-multiplier: 10
+  multiply:
+    # Money, tokens, mobcoins, XP levels... every currency of the reward
+    currencies: true
+    # Items too (only whole multipliers: x2, x3. With x1.5 the items stay the same)
+    items: false
+  # Which rewards get the bonus
+  rewards:
+    inviter: true
+    welcome: true
+    milestones: true
+  # How everyone is told
+  show:
+    # message when it starts and when it ends
+    chat: true
+    # title when it starts
+    title: true
+    # boss bar with the time left, for the whole event
+    bossbar: true
+    # action bar with the time left
+    actionbar: false
+    # message to players who join during the event
+    join-message: true
+    # sound when it starts ("" = none)
+    sound: "entity.player.levelup"
+  # color: PINK BLUE RED GREEN YELLOW PURPLE WHITE   style: PROGRESS NOTCHED_6 NOTCHED_10 NOTCHED_12 NOTCHED_20
+  bossbar:
+    color: YELLOW
+    style: PROGRESS
+  title:
+    fade-in: 10
+    stay: 70
+    fade-out: 20
+  # Chat reminder every X minutes while it runs. 0 = off
+  remind-minutes: 0
+
+# ── PlaceholderAPI ──────────────────────────────────────
+# Texts of the %flarereferrals_...% placeholders (full list: Placeholders page of the wiki)
+placeholders:
+  # %flarereferrals_top_<n>_line%   {position} {player} {invites}, also placeholders of that player (%luckperms_prefix%)
+  top-line: "&#ff7a6b#{position} &f{player} &7- &#ff7a6b{invites}"
+  # top_<n>_name and position when there is nobody
+  nobody: "-"
+  # referred, can_enter, event_active
+  true-text: "Yes"
+  false-text: "No"
 
 # Currencies usable as rewards. Add as many as you want.
 # mobcoins / tokens / coins are examples: turn them on (enabled: true) only if their plugin is installed.

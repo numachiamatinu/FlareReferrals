@@ -505,6 +505,33 @@ public final class SqlStorage implements Storage {
         }
 
         @Override
+        public UUID lockPair(UUID user, UUID target) {
+            if (!mysql) return super_lockPair(target); // SQLite: one server, one writer at a time
+            // always the same order, so two servers locking the same two players wait instead of blocking each other
+            String a = user.toString(), b = target.toString();
+            String first = a.compareTo(b) <= 0 ? a : b, second = a.compareTo(b) <= 0 ? b : a;
+            UUID ref = null;
+            try (PreparedStatement ps = c.prepareStatement("SELECT uuid, referred_by FROM " + tPlayers
+                    + " WHERE uuid IN (?, ?) ORDER BY uuid FOR UPDATE")) {
+                ps.setString(1, first);
+                ps.setString(2, second);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        if (b.equals(rs.getString(1))) ref = uuid(rs.getString(2));
+                    }
+                }
+            } catch (SQLException e) {
+                throw new Fail(e);
+            }
+            return ref;
+        }
+
+        private UUID super_lockPair(UUID target) {
+            PlayerData t = player(target);
+            return t == null ? null : t.referredBy();
+        }
+
+        @Override
         public boolean setReferrer(UUID user, UUID inviter, long at, String status) {
             ensure(user, null);
             touched.add(user);
@@ -617,6 +644,30 @@ public final class SqlStorage implements Storage {
         public void addPlaytime(UUID uuid, long seconds) {
             // not "touched": other servers don't need a refresh for playtime
             update("UPDATE " + tPlayers + " SET playtime = playtime + ? WHERE uuid = ?", seconds, uuid.toString());
+        }
+
+        @Override
+        public String meta(String key) {
+            try (PreparedStatement ps = c.prepareStatement("SELECT v FROM " + tMeta + " WHERE k = ?")) {
+                ps.setString(1, cut(key, 64));
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? rs.getString(1) : null;
+                }
+            } catch (SQLException e) {
+                throw new Fail(e);
+            }
+        }
+
+        @Override
+        public void meta(String key, String value) {
+            String v = cut(value == null ? "" : value, 255);
+            if (update("UPDATE " + tMeta + " SET v = ? WHERE k = ?", v, cut(key, 64)) > 0) return;
+            try {
+                update("INSERT INTO " + tMeta + " (k, v) VALUES (?, ?)", cut(key, 64), v);
+            } catch (Fail f) {
+                if (!duplicate(f.cause)) throw f; // written at the same moment by another server
+                update("UPDATE " + tMeta + " SET v = ? WHERE k = ?", v, cut(key, 64));
+            }
         }
 
         @Override

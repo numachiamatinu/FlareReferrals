@@ -58,6 +58,7 @@ public final class Lang {
                 cfg.setDefaults(defaults);
                 if (broken) return;
                 boolean changed = false;
+                java.util.List<String> added = new java.util.ArrayList<>();
                 // menu texts changed in a newer version: back up the file, then refresh menu + prompt texts.
                 // This replaces edited texts too: changed default texts go in text-updates.yml instead.
                 // Test builds of 1.0.21 used 13-15, so a future bump must be 16 or higher.
@@ -93,16 +94,26 @@ public final class Lang {
                     if (defaults.isConfigurationSection(key)) continue;
                     if (!cfg.isSet(key)) {
                         dev.tmdevelopment.flarereferrals.util.Comments.add(cfg, defaults, key);
+                        added.add(key);
                         changed = true;
                     }
                 }
                 if (changed) {
-                    cfg.save(file);
+                    // only what changed is written: comments and layout of the file stay (also on 1.16.5 - 1.17)
+                    if (!dev.tmdevelopment.flarereferrals.util.YamlKeeper.update(file, cfg, resourceText("lang/en.yml"), added)) cfg.save(file);
                     plugin.getLogger().info("Added new messages to lang/" + file.getName());
                 }
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Could not load default language: " + e.getMessage());
+        }
+    }
+
+    private String resourceText(String path) {
+        try (InputStream in = plugin.getResource(path)) {
+            return in == null ? null : new String(dev.tmdevelopment.flarereferrals.util.J8.readAll(in), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return null;
         }
     }
 

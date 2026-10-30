@@ -50,14 +50,21 @@ public final class MenuTexts {
         changed |= dev.tmdevelopment.flarereferrals.util.TextUpdates.apply(plugin, admin, def, "menus/admin.yml");
         admin.setDefaults(def);
         // texts added by newer versions are written into the file, edited ones are kept
+        java.util.List<String> added = new java.util.ArrayList<>();
         for (String key : def.getKeys(true)) {
             if (def.isConfigurationSection(key) || admin.isSet(key)) continue;
             dev.tmdevelopment.flarereferrals.util.Comments.add(admin, def, key);
+            added.add(key);
             changed = true;
         }
         if (changed) {
             try {
-                admin.save(f);
+                // only what changed is written: comments and layout of the file stay (also on 1.16.5 - 1.17)
+                String defText = null;
+                try (InputStream in = plugin.getResource("menus/admin.yml")) {
+                    if (in != null) defText = new String(dev.tmdevelopment.flarereferrals.util.J8.readAll(in), StandardCharsets.UTF_8);
+                }
+                if (!dev.tmdevelopment.flarereferrals.util.YamlKeeper.update(f, admin, defText, added)) admin.save(f);
             } catch (Exception e) {
                 plugin.getLogger().warning("Could not update menus/admin.yml: " + e.getMessage());
             }
@@ -70,7 +77,7 @@ public final class MenuTexts {
         int dot = rest.indexOf('.');
         String first = dot < 0 ? rest : rest.substring(0, dot);
         String tail = dot < 0 ? "" : rest.substring(dot + 1);
-        String menu = ("player".equals(first) ? "main" : "referral-rewards".equals(first) ? "rewards" : "top".equals(first) ? "top" : "preview".equals(first) ? "preview" : "collect".equals(first) ? "collect" : null);
+        String menu = ("player".equals(first) ? "main" : "referral-rewards".equals(first) ? "rewards" : "top".equals(first) ? "top" : "preview".equals(first) ? "preview" : "collect".equals(first) ? "collect" : "invited".equals(first) ? "invited" : null);
         if (menu != null && !tail.isEmpty()) {
             if (tail.equals("title")) {
                 // the title is the "title" option of the menu file; empty = original title

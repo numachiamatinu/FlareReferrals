@@ -103,3 +103,6 @@ texts:
   preview-currency: "&7▪ {currency}"
   preview-extra: "&7▪ &fextra rewards"
   preview-empty: "&7▪ nothing"
+  # earned during a reward event (/referrals event)
+  bonus:
+    - "&#ff7a6b✦ Event bonus x{multiplier}"

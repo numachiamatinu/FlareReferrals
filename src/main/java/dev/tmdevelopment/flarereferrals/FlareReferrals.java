@@ -29,6 +29,8 @@ public final class FlareReferrals extends JavaPlugin {
     private DataManager data;
     private ReferralService referrals;
     private ChatInput chatInput;
+    private dev.tmdevelopment.flarereferrals.service.ReferralEvents events;
+    private dev.tmdevelopment.flarereferrals.service.InviteHint hints;
     private TMDStats stats;
     private dev.tmdevelopment.flarereferrals.update.UpdateChecker updates;
 
@@ -129,6 +131,10 @@ public final class FlareReferrals extends JavaPlugin {
         }
         referrals = new ReferralService(this);
         referrals.checkServers();
+        events = new dev.tmdevelopment.flarereferrals.service.ReferralEvents(this);
+        events.load();
+        hints = new dev.tmdevelopment.flarereferrals.service.InviteHint(this);
+        hints.reload();
         dev.tmdevelopment.flarereferrals.util.ReferralLog.start(this, getConfig().getBoolean("logs.referrals", true),
                 data.network() ? data.server() : "");
         chatInput = new ChatInput(this);
@@ -178,6 +184,8 @@ public final class FlareReferrals extends JavaPlugin {
     public void onDisable() {
         if (unsupported) return;
         if (stats != null) stats.shutdown();
+        if (events != null) events.shutdown();
+        if (hints != null) hints.shutdown();
         dev.tmdevelopment.flarereferrals.service.ScreenEffects.clear();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (dev.tmdevelopment.flarereferrals.gui.Menu.openFor(p) != null) {
@@ -241,7 +249,24 @@ public final class FlareReferrals extends JavaPlugin {
             getLogger().warning("config.yml was not saved because it has a mistake: fix it and use /referrals reload.");
             return;
         }
+        // only what changed is written: comments, quotes and layout of the file stay as they are
+        try {
+            org.bukkit.configuration.file.YamlConfiguration now = new org.bukkit.configuration.file.YamlConfiguration();
+            now.loadFromString(getConfig().saveToString()); // the values of the file, without the defaults of the jar
+            if (dev.tmdevelopment.flarereferrals.util.YamlKeeper.keep(new java.io.File(getDataFolder(), "config.yml"), now)) return;
+        } catch (Exception ignored) {
+            // written again below
+        }
         super.saveConfig();
+    }
+
+    /** config.yml inside the jar, as text. */
+    private String defaultConfigText() {
+        try (java.io.InputStream in = getResource("config.yml")) {
+            return in == null ? null : new String(dev.tmdevelopment.flarereferrals.util.J8.readAll(in), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void updateConfig() {
@@ -263,20 +288,52 @@ public final class FlareReferrals extends JavaPlugin {
             cfg.set("milestones.claim-in-menu", null);
             changed = true;
         }
+        if (changed) saveConfig();
+        java.util.List<String> missing = missingOptions(cfg, defaults);
+        if (!missing.isEmpty()) {
+            // written as text with the explanation above them, also on 1.16.5 - 1.17; the rest of the file is not touched
+            java.io.File f = new java.io.File(getDataFolder(), "config.yml");
+            String def = defaultConfigText();
+            try {
+                String text = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8).replace("\r\n", "\n");
+                String next = text;
+                if (def != null) for (String key : missing) next = dev.tmdevelopment.flarereferrals.util.YamlPatch.addMissing(next, def.replace("\r\n", "\n"), key);
+                if (!next.equals(text)) {
+                    new org.bukkit.configuration.file.YamlConfiguration().loadFromString(next); // never write a broken file
+                    dev.tmdevelopment.flarereferrals.util.J8.write(f.toPath(), next, java.nio.charset.StandardCharsets.UTF_8);
+                    reloadConfig();
+                    cfg = getConfig();
+                    changed = true;
+                }
+            } catch (Exception e) {
+                getLogger().fine("New options added the other way: " + e.getMessage());
+            }
+            // what could not be added as text (unusual layout of the file): the old way
+            boolean rest = false;
+            for (String key : missingOptions(cfg, defaults)) {
+                dev.tmdevelopment.flarereferrals.util.Comments.add(cfg, defaults, key);
+                rest = true;
+            }
+            if (rest) {
+                super.saveConfig();
+                changed = true;
+            }
+        }
+        if (changed) getLogger().info("config.yml updated with the new options of this version.");
+    }
+
+    /** Options of the jar's config.yml missing in the server file (lists of your own entries are not completed). */
+    private static java.util.List<String> missingOptions(org.bukkit.configuration.file.FileConfiguration cfg,
+                                                         org.bukkit.configuration.Configuration defaults) {
+        java.util.List<String> out = new java.util.ArrayList<>();
         for (String key : defaults.getKeys(true)) {
             if (defaults.isConfigurationSection(key)) continue;
             String userList = key.startsWith("currencies.") ? "currencies"
                     : key.startsWith("auto-install.plugins.") ? "auto-install.plugins" : null;
             if (userList != null && cfg.isSet(userList)) continue;
-            if (!cfg.isSet(key)) {
-                dev.tmdevelopment.flarereferrals.util.Comments.add(cfg, defaults, key);
-                changed = true;
-            }
+            if (!cfg.isSet(key)) out.add(key);
         }
-        if (changed) {
-            saveConfig();
-            getLogger().info("config.yml updated with the new options of this version.");
-        }
+        return out;
     }
 
     /**
@@ -285,11 +342,12 @@ public final class FlareReferrals extends JavaPlugin {
      */
     public boolean canOpen(org.bukkit.command.CommandSender s, String key) {
         // a menu turned off in menus/<menu>.yml (enabled: false) is off for everyone
-        String layout = ("menu".equals(key) ? "main" : "rewards".equals(key) ? "rewards" : "preview".equals(key) ? "preview" : "topmenu".equals(key) ? "top" : "collect".equals(key) ? "collect" : null);
+        String layout = ("menu".equals(key) ? "main" : "rewards".equals(key) ? "rewards" : "preview".equals(key) ? "preview" : "topmenu".equals(key) ? "top" : "collect".equals(key) ? "collect" : "invited".equals(key) ? "invited" : null);
         if (layout != null && layouts != null && !layouts.get(layout).enabled()) return false;
         if (key.equals("topmenu")) key = "top";
         if (dev.tmdevelopment.flarereferrals.util.Perms.has(s, "admin")) return true;
-        return getConfig().getBoolean("player-access." + key, true) && dev.tmdevelopment.flarereferrals.util.Perms.has(s, key);
+        // "invited" (list of the invited players) is off until the admin turns it on
+        return getConfig().getBoolean("player-access." + key, !"invited".equals(key)) && dev.tmdevelopment.flarereferrals.util.Perms.has(s, key);
     }
 
     /** Same as canOpen. Silent on purpose: things a player can't open must look like they don't exist. */
@@ -323,6 +381,10 @@ public final class FlareReferrals extends JavaPlugin {
         layouts.load();
         menuTexts.load();
         menuCommands.refresh();
+        data.reloadSettings();
+        dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.reset();
+        events.reload();
+        hints.reload();
         boolean restart = !before.equals(storageSettings());
         if (restart) getLogger().warning("Storage / network settings changed: restart the server to use them.");
         return restart;
@@ -362,6 +424,9 @@ public final class FlareReferrals extends JavaPlugin {
             stats.addValue("milestones", () -> rewards.milestones().size());
             stats.addValue("storage", () -> data.type());
             stats.addValue("network", () -> data.network() ? "Network" : "Single server");
+            stats.addValue("invite_hint", () -> hints.enabled() ? "On" : "Off");
+            stats.addValue("events", () -> events.enabled() ? "On" : "Off");
+            stats.addValue("invited_list", () -> getConfig().getBoolean("player-access.invited", false) ? "On" : "Off");
         } catch (Throwable t) {
             getLogger().fine("TMDStats not started: " + t.getMessage());
         }
@@ -404,6 +469,8 @@ public final class FlareReferrals extends JavaPlugin {
     public DataManager data() { return data; }
     public ReferralService referrals() { return referrals; }
     public ChatInput chatInput() { return chatInput; }
+    public dev.tmdevelopment.flarereferrals.service.ReferralEvents events() { return events; }
+    public dev.tmdevelopment.flarereferrals.service.InviteHint hints() { return hints; }
     public dev.tmdevelopment.flarereferrals.update.UpdateChecker updates() { return updates; }
 
     /** Admins who join hear about a new version (clickable), a few seconds after joining. */

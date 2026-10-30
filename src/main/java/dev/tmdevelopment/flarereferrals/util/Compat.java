@@ -99,15 +99,47 @@ public final class Compat {
 
     // ------------------------------------------------------------------ players
 
-    /** Player who already joined, by name (no web lookup, never blocks). */
+    /** Names (lower case) of the players saved by the server, read once: reading them all is slow on big servers. */
+    private static volatile Map<String, UUID> savedNames;
+    private static Method ifCached;
+    private static boolean ifCachedChecked;
+
+    /**
+     * Player who already joined, by name (no web lookup). The saved players are read only once: a wrong name
+     * typed again and again can't lag the server. Players who joined after that are found in the plugin data.
+     */
     public static OfflinePlayer knownPlayer(String name) {
-        if (name == null) return null;
+        if (name == null || name.isEmpty()) return null;
         OfflinePlayer online = Bukkit.getPlayerExact(name);
         if (online != null) return online;
-        for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
-            if (op.getName() != null && op.getName().equalsIgnoreCase(name)) return op;
+        // Paper: the name cache of the server, no disk read
+        if (!ifCachedChecked) {
+            ifCachedChecked = true;
+            try {
+                ifCached = Bukkit.getServer().getClass().getMethod("getOfflinePlayerIfCached", String.class);
+            } catch (Throwable ignored) {
+                ifCached = null;
+            }
         }
-        return null;
+        if (ifCached != null) {
+            try {
+                OfflinePlayer op = (OfflinePlayer) ifCached.invoke(Bukkit.getServer(), name);
+                if (op != null && op.hasPlayedBefore()) return op;
+            } catch (Throwable ignored) {
+                // read from the saved players below
+            }
+        }
+        Map<String, UUID> names = savedNames;
+        if (names == null) {
+            names = new java.util.HashMap<>();
+            for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
+                String n = op.getName();
+                if (n != null) names.put(n.toLowerCase(java.util.Locale.ROOT), op.getUniqueId());
+            }
+            savedNames = names;
+        }
+        UUID id = names.get(name.toLowerCase(java.util.Locale.ROOT));
+        return id == null ? null : Bukkit.getOfflinePlayer(id);
     }
 
     /** Holder of the menu a player has open (InventoryView is a class before 1.21 and an interface after). */

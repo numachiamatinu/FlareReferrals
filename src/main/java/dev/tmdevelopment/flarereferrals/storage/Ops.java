@@ -18,6 +18,15 @@ public interface Ops {
     /** Creates the player when missing and updates name / ip hash (when not null) / first seen (keeps the oldest). */
     PlayerData touch(UUID uuid, String name, String ipHash, long firstSeen);
 
+    /**
+     * Locks the two players until the end of the transaction (MySQL: two servers can't save an invite between
+     * them at the same moment) and returns who invited {@code target}, as saved right now.
+     */
+    default UUID lockPair(UUID user, UUID target) {
+        PlayerData t = player(target);
+        return t == null ? null : t.referredBy();
+    }
+
     /** Saves the inviter only when the player has none yet. @return false when he already has one. */
     boolean setReferrer(UUID user, UUID inviter, long at, String status);
 
@@ -43,6 +52,15 @@ public interface Ops {
     void deleteReward(UUID uuid, long id);
 
     void addPlaytime(UUID uuid, long seconds);
+
+    /** A shared value of the network (the reward event...), null when unknown. Only databases keep them. */
+    default String meta(String key) {
+        return null;
+    }
+
+    /** Saves a shared value of the network ("" = none). Only databases keep them. */
+    default void meta(String key, String value) {
+    }
 
     /** Message for the other servers of the network (ignored without network). */
     void event(String type, UUID target, String data);

@@ -191,7 +191,7 @@ public final class YamlStorage implements Storage {
     public <T> Result<T> transaction(Function<Ops, T> work) {
         MemoryOps ops = new MemoryOps();
         T value = work.apply(ops);
-        if (ops.urgent) flush();
+        if (ops.urgent) flushNow();
         else flushSoon();
         return new Result<>(value, Collections.<PlayerData>emptyList(), Collections.<UUID>emptyList());
     }
@@ -217,11 +217,11 @@ public final class YamlStorage implements Storage {
 
     // ---------------------------------------------------------------- saving
 
-    private String serialize() {
+    private String serialize(Collection<PlayerData> list, long next) {
         YamlConfiguration yml = new YamlConfiguration();
         yml.set("data-version", VERSION);
-        yml.set("next-reward-id", nextId);
-        for (PlayerData d : players.values()) {
+        yml.set("next-reward-id", next);
+        for (PlayerData d : list) {
             String base = "players." + d.uuid();
             yml.set(base + ".name", d.rawName());
             if (d.referredBy() != null) {
@@ -248,6 +248,7 @@ public final class YamlStorage implements Storage {
     }
 
     private boolean flushScheduled;
+    private boolean urgentScheduled;
 
     /** Many changes in a row (players joining) = one save one second later. */
     private void flushSoon() {
@@ -263,26 +264,45 @@ public final class YamlStorage implements Storage {
         }, 20L);
     }
 
-    /** Serializes on the calling (main) thread, writes the file async. */
+    /** Rewards and inviters: saved at the next tick, once for all the changes of this tick (a referral makes several). */
+    private void flushNow() {
+        if (!plugin.isEnabled()) {
+            flushSync();
+            return;
+        }
+        if (urgentScheduled) return;
+        urgentScheduled = true;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            urgentScheduled = false;
+            flush();
+        });
+    }
+
+    /**
+     * Copies the data on the calling (main) thread, then builds the file and writes it in the background:
+     * the server doesn't wait for a big data.yml to be written.
+     */
     @Override
     public void flush() {
-        String content = serialize();
+        List<PlayerData> copy = new ArrayList<>(players.size());
+        for (PlayerData d : players.values()) copy.add(d.copy());
+        long next = nextId;
         long seq = saveSeq.incrementAndGet();
         if (plugin.isEnabled()) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> write(content, seq));
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> write(serialize(copy, next), seq));
         } else {
-            write(content, seq);
+            write(serialize(copy, next), seq);
         }
     }
 
     @Override
     public void flushSync() {
-        write(serialize(), saveSeq.incrementAndGet());
+        write(serialize(players.values(), nextId), saveSeq.incrementAndGet());
     }
 
     private void write(String content, long seq) {
         synchronized (ioLock) {
-            if (seq < writtenSeq) return; // a newer snapshot was already written
+            if (seq < writtenSeq) return; // a newer copy was already written
             writtenSeq = seq;
             try {
                 File tmp = new File(file.getParentFile(), file.getName() + ".tmp");

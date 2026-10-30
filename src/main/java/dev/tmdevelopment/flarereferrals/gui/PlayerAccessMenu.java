@@ -12,9 +12,9 @@ import java.util.List;
 /** /referrals settings > Player access: what normal players can open. */
 public final class PlayerAccessMenu extends Menu {
 
-    private static final String[] KEYS = {"info", "menu", "rewards", "top", "preview", "collect"};
+    private static final String[] KEYS = {"info", "menu", "rewards", "top", "preview", "collect", "invited"};
     private static final Material[] ICONS = {Material.WRITABLE_BOOK, Material.CHEST, Material.EMERALD,
-            Material.KNOWLEDGE_BOOK, Material.ENDER_EYE, Material.CHEST_MINECART};
+            Material.KNOWLEDGE_BOOK, Material.ENDER_EYE, Material.CHEST_MINECART, Material.PLAYER_HEAD};
 
     private final Menu parent;
 
@@ -29,10 +29,10 @@ public final class PlayerAccessMenu extends Menu {
     @Override
     protected void build() {
         org.bukkit.configuration.file.FileConfiguration cfg = plugin.getConfig();
-        int[] slots = {10, 11, 12, 14, 15, 16};
+        int[] slots = {10, 11, 12, 13, 14, 15, 16};
         for (int i = 0; i < KEYS.length; i++) {
             String key = KEYS[i];
-            boolean on = cfg.getBoolean("player-access." + key, true);
+            boolean on = cfg.getBoolean("player-access." + key, !"invited".equals(key));
             List<Component> lore = new ArrayList<>(lang().lore("gui.access.options." + key + ".lore", viewer));
             lore.addAll(lang().lore("gui.access.toggle-lore", viewer, "%status%", status(on)));
             set(slots[i], new ItemBuilder(ICONS[i])

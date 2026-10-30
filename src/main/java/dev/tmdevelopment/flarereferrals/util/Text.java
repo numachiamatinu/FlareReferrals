@@ -92,10 +92,9 @@ public final class Text {
     public static Component parseAbout(String input, org.bukkit.OfflinePlayer about) {
         if (input == null) return Component.empty();
         String s = input;
-        if (about != null && !(about instanceof Player) && s.indexOf("%luckperms_") >= 0) {
-            // offline players: prefix / suffix straight from LuckPerms (its PlaceholderAPI expansion leaves them empty)
-            s = luckPerms(s, about.getUniqueId(), "prefix");
-            s = luckPerms(s, about.getUniqueId(), "suffix");
+        if (about != null && (!(about instanceof Player) || !papi) && s.indexOf("%luckperms_") >= 0) {
+            // offline players (and everyone without PlaceholderAPI): prefix, suffix and group straight from LuckPerms
+            s = dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.fill(about.getUniqueId(), s);
         }
         if (papi && about != null && s.indexOf('%') >= 0) {
             s = about instanceof Player ? PapiHook.apply((Player) about, s) : PapiHook.apply(about, s);
@@ -122,13 +121,6 @@ public final class Text {
     /** Same as parse but without the default italic of item names / lore. */
     public static Component item(String input, Player player) {
         return parse(input, player).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-    }
-
-    private static String luckPerms(String s, java.util.UUID id, String which) {
-        String key = "%luckperms_" + which + "%";
-        if (!s.contains(key)) return s;
-        String v = dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.meta(id, which);
-        return v == null ? s : s.replace(key, v);
     }
 
     /** item() with the placeholders of another player (see parseAbout). */
@@ -163,6 +155,27 @@ public final class Text {
             }
         }
         return s;
+    }
+
+    private static final Pattern PLAYER_NAME = Pattern.compile("[.*!~+\\-]?[A-Za-z0-9_]{1,20}");
+
+    /** A name a player can have (Java names, and Bedrock names with the prefix of Floodgate). */
+    public static boolean validName(String s) {
+        return s != null && PLAYER_NAME.matcher(s).matches();
+    }
+
+    /**
+     * Something typed by a player, to show it in a message: only letters, numbers and _ . - stay, so it can't
+     * carry placeholders (%...%), colors or tags into the message.
+     */
+    public static String safe(String s) {
+        if (s == null) return "";
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < s.length() && out.length() < 32; i++) {
+            char c = s.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '-') out.append(c);
+        }
+        return out.length() == 0 ? "?" : out.toString();
     }
 
     public static List<String> replace(List<String> lines, String... pairs) {

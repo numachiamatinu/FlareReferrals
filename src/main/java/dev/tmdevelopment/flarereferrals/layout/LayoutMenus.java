@@ -22,6 +22,7 @@ public final class LayoutMenus {
         if (id == null) return null;
         if (plugin.layouts().isCustom(id)) return new PlayerMenu(plugin, viewer, id, parent);
         return ("main".equals(id) ? new PlayerMenu(plugin, viewer) : "rewards".equals(id) ? new ReferralRewardsMenu(plugin, viewer, parent) : "top".equals(id) ? new TopMenu(plugin, viewer, parent) : "preview".equals(id) ? new PreviewMenu(plugin, viewer, plugin.rewards().invited(), parent)
-                : "collect".equals(id) ? new dev.tmdevelopment.flarereferrals.gui.CollectMenu(plugin, viewer, parent) : null);
+                : "collect".equals(id) ? new dev.tmdevelopment.flarereferrals.gui.CollectMenu(plugin, viewer, parent)
+                : "invited".equals(id) ? new dev.tmdevelopment.flarereferrals.gui.InvitedMenu(plugin, viewer, viewer.getUniqueId(), parent) : null);
     }
 }

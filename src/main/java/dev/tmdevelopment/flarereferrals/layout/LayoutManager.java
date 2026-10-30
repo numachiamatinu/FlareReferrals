@@ -16,9 +16,9 @@ import java.util.Map;
 public final class LayoutManager {
 
     /** Customizable menus, in the order shown in the admin list. */
-    public static final List<String> IDS = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview", "collect");
+    public static final List<String> IDS = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview", "collect", "invited");
     /** Files of menus/ that are not menus made with the chest builder: the menus of the plugin and admin.yml (texts). */
-    public static final List<String> RESERVED = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview", "collect", "admin");
+    public static final List<String> RESERVED = dev.tmdevelopment.flarereferrals.util.J8.list("main", "rewards", "top", "preview", "collect", "invited", "admin");
 
     private final FlareReferrals plugin;
     private final File dir;
@@ -61,6 +61,7 @@ public final class LayoutManager {
         java.util.Set<String> customBefore = new java.util.TreeSet<>(custom);
         layouts.clear();
         custom.clear();
+        keepOldCustom("invited");
         for (String id : IDS) {
             File f = new File(dir, id + ".yml");
             if (!f.exists()) plugin.saveResource("menus/" + id + ".yml", false);
@@ -92,6 +93,28 @@ public final class LayoutManager {
             }
         }
         loadCustom(before, customBefore);
+    }
+
+    /**
+     * A menu made with the chest builder before a version of the plugin took its name (1.0.23: "invited") is moved
+     * to a free name: it keeps working with its open-commands, the plugin menu gets its own file.
+     */
+    private void keepOldCustom(String id) {
+        File f = new File(dir, id + ".yml");
+        if (!f.isFile()) return;
+        try {
+            String text = new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            String header = dev.tmdevelopment.flarereferrals.util.Headers.of(plugin, CUSTOM_HEADER);
+            String first = header.isEmpty() ? null : header.split("\n", 2)[0];
+            if (first == null || !text.startsWith(first)) return; // the menu of the plugin
+            String name = id + "-menu";
+            for (int i = 2; new File(dir, name + ".yml").exists(); i++) name = id + "-menu-" + i;
+            java.nio.file.Files.move(f.toPath(), new File(dir, name + ".yml").toPath());
+            plugin.getLogger().warning("menus/" + id + ".yml was a menu made with the chest builder, but FlareReferrals now uses"
+                    + " this name for its own menu: your menu is now menus/" + name + ".yml (same open commands, same items).");
+        } catch (IOException e) {
+            plugin.getLogger().warning("Could not move menus/" + id + ".yml: " + e.getMessage());
+        }
     }
 
     /** The menus made with the chest builder: every other menus/&lt;name&gt;.yml. */
@@ -313,6 +336,8 @@ public final class LayoutManager {
         MenuLayout layout = get(id);
         YamlConfiguration yml = new YamlConfiguration();
         layout.save(yml);
+        // only what changed is written: comments, quotes and layout of the file stay as they are
+        if (dev.tmdevelopment.flarereferrals.util.YamlKeeper.keep(new File(dir, id + ".yml"), yml)) return true;
         if (!isCustom(id)) {
             // the short explanations above the options stay in the file (Minecraft 1.18.1+)
             YamlConfiguration def = defaults(id);

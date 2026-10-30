@@ -54,6 +54,8 @@ public final class PlayerMenu extends LayoutMenu {
         m.put("referral-rewards", Material.EMERALD);
         m.put("collect", Material.CHEST_MINECART);
         m.put("top", Material.KNOWLEDGE_BOOK);
+        m.put("who-invited", Material.NAME_TAG);
+        m.put("invited-list", Material.PLAYER_HEAD);
         m.put("settings", Material.COMPARATOR);
         m.put("close", Material.ARROW);
         if (!"main".equals(layoutId)) m.put("back", Material.SPECTRAL_ARROW);
@@ -132,11 +134,48 @@ public final class PlayerMenu extends LayoutMenu {
             element("top", new ItemStack(Material.KNOWLEDGE_BOOK), "gui.settings.top", null, false,
                     e -> new TopMenu(plugin, viewer, this).openLater());
         }
+        whoInvited(d, referrer);
+        if (editMode || plugin.canOpen(viewer, "invited")) {
+            int count = plugin.data().invitedBy(viewer.getUniqueId()).size();
+            element("invited-list", new ItemStack(Material.PLAYER_HEAD), "gui.player.invited-list", null, false,
+                    e -> new InvitedMenu(plugin, viewer, viewer.getUniqueId(), this).openLater(), "%amount%", String.valueOf(count));
+        }
         if (admin || editMode) {
             element("settings", new ItemStack(Material.COMPARATOR), "gui.player.settings", null, false,
                     e -> new SettingsMenu(plugin, viewer).openLater());
         }
         element("close", new ItemStack(Material.ARROW), "gui.common.close", null, false, e -> viewer.closeInventory());
         element("back", new ItemStack(Material.ARROW), backTo == null ? "gui.common.close" : "gui.common.back", null, false, e -> goBack());
+    }
+
+    /**
+     * "Who invited you?": click and write the name in chat. After that it shows who it was; while the player
+     * must still play a bit it says how long. Not in the menu by default: admins add it from the editor.
+     */
+    private void whoInvited(PlayerData d, String referrer) {
+        if (editMode) {
+            element("who-invited", new ItemStack(Material.NAME_TAG), "gui.player.who-invited.open", null, false, null);
+            return;
+        }
+        if (d != null && d.referredBy() != null) {
+            element("who-invited", new ItemStack(Material.NAME_TAG), "gui.player.who-invited.done", null, false, null,
+                    "%referrer%", referrer);
+            return;
+        }
+        int can = plugin.hints().canEnter(viewer);
+        if (can == 2) {
+            element("who-invited", new ItemStack(Material.NAME_TAG), "gui.player.who-invited.closed", null, false, null);
+            return;
+        }
+        if (can == 1) {
+            int min = plugin.getConfig().getInt("referral.min-playtime-minutes", 0);
+            int left = Math.max(1, min - plugin.referrals().playtimeMinutes(viewer, d));
+            element("who-invited", new ItemStack(Material.NAME_TAG), "gui.player.who-invited.wait", null, false, null,
+                    "%minutes%", String.valueOf(left));
+            return;
+        }
+        element("who-invited", new ItemStack(Material.NAME_TAG), "gui.player.who-invited.open", null, true, e ->
+                plugin.chatInput().ask(viewer, "input.who-invited", text -> plugin.referrals().refer(viewer, text.trim()), () -> { },
+                        "%days%", plugin.hints().daysLeft(viewer)));
     }
 }

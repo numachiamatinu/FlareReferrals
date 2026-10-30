@@ -19,11 +19,16 @@ public final class SettingsMenu extends Menu {
         private final String key;
         private final String id;
         private final Material icon;
+        private final boolean def;
         Toggle(int slot, String key, String id, Material icon) {
+            this(slot, key, id, icon, true);
+        }
+        Toggle(int slot, String key, String id, Material icon, boolean def) {
             this.slot = slot;
             this.key = key;
             this.id = id;
             this.icon = icon;
+            this.def = def;
         }
         public int slot() { return slot; }
         public String key() { return key; }
@@ -41,6 +46,9 @@ public final class SettingsMenu extends Menu {
             new Toggle(16, "rewards.drop-if-full", "drop-if-full", Material.HOPPER),
             new Toggle(20, "sounds.enabled", "sounds", Material.NOTE_BLOCK),
             new Toggle(22, "rewards.collect-menu", "collect-menu", Material.CHEST_MINECART),
+            // off until the admin wants them
+            new Toggle(19, "invite-hint.enabled", "invite-hint", Material.OAK_SIGN, false),
+            new Toggle(25, "events.enabled", "events", Material.FIREWORK_ROCKET, false),
     };
 
     public SettingsMenu(FlareReferrals plugin, Player viewer) {
@@ -54,7 +62,7 @@ public final class SettingsMenu extends Menu {
     protected void build() {
         org.bukkit.configuration.file.FileConfiguration cfg = plugin.getConfig();
         for (Toggle t : TOGGLES) {
-            boolean on = cfg.getBoolean(t.key(), true);
+            boolean on = cfg.getBoolean(t.key(), t.def);
             List<Component> lore = new ArrayList<>(lang().lore("gui.settings.options." + t.id() + ".lore", viewer));
             lore.addAll(lang().lore("gui.settings.toggle-lore", viewer, "%status%", status(on)));
             set(t.slot(), new ItemBuilder(t.icon())
@@ -62,6 +70,8 @@ public final class SettingsMenu extends Menu {
                     .lore(lore).glow(on).hideFlags().build(), e -> {
                 cfg.set(t.key(), !on);
                 plugin.saveConfig();
+                if (t.key().startsWith("invite-hint.")) plugin.hints().reload();
+                if (t.key().startsWith("events.")) plugin.events().reload();
                 refresh();
             });
         }

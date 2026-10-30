@@ -60,7 +60,7 @@ public final class ScreenEffects {
         }
     }
 
-    private static BarColor color(String name) {
+    static BarColor color(String name) {
         try {
             return BarColor.valueOf(name == null ? "" : name.toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
@@ -69,7 +69,7 @@ public final class ScreenEffects {
     }
 
     /** Accepts the Bukkit names (SOLID, SEGMENTED_10) and the older ones of this plugin (PROGRESS, NOTCHED_10). */
-    private static BarStyle style(String name) {
+    static BarStyle style(String name) {
         String n = name == null ? "" : name.toUpperCase(java.util.Locale.ROOT);
         if (n.equals("PROGRESS")) return BarStyle.SOLID;
         if (n.startsWith("NOTCHED_")) n = "SEGMENTED_" + n.substring(8);

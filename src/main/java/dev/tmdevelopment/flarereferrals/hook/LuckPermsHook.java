@@ -30,25 +30,99 @@ public final class LuckPermsHook {
         return lp != null && lp.isEnabled();
     }
 
+    private static final String[] KEYS = {"%luckperms_prefix%", "%luckperms_suffix%", "%luckperms_primary_group_name%"};
+    // read by PlaceholderAPI / scoreboard threads too: volatile, and copied before use
+    private static volatile Object manager;
+    private static volatile Method getUser;
+    private static Method cachedData;
+    private static Method metaData;
+    private static Method prefix;
+    private static Method suffix;
+    private static Method primaryGroup;
+    private static Object groups;
+    private static Method getGroup;
+    private static Method friendlyName;
+    private static volatile boolean broken;
+
     /**
-     * Prefix ("prefix") or suffix ("suffix") of a player LuckPerms has in memory, also when he is offline
-     * (the PlaceholderAPI expansion of LuckPerms gives them only for online players). null = unknown.
+     * Fills %luckperms_prefix%, %luckperms_suffix% and %luckperms_primary_group_name% of a player that LuckPerms
+     * has in memory, also when he is offline (the PlaceholderAPI expansion of LuckPerms leaves them empty for
+     * offline players). Players it doesn't have get them empty until they are loaded (see {@link #load}).
      */
-    public static String meta(UUID id, String which) {
-        if (id == null || !installed()) return null;
+    public static String fill(UUID id, String text) {
+        if (id == null || text == null || text.indexOf("%luckperms_") < 0 || broken || !installed()) return text;
+        boolean any = false;
+        for (String k : KEYS) any |= text.contains(k);
+        if (!any) return text;
         try {
-            Object lp = Class.forName("net.luckperms.api.LuckPermsProvider").getMethod("get").invoke(null);
-            Object manager = Class.forName("net.luckperms.api.LuckPerms").getMethod("getUserManager").invoke(lp);
-            Object user = Class.forName("net.luckperms.api.model.user.UserManager").getMethod("getUser", UUID.class).invoke(manager, id);
-            if (user == null) return null;
-            Object cached = Class.forName("net.luckperms.api.model.PermissionHolder").getMethod("getCachedData").invoke(user);
-            Object meta = Class.forName("net.luckperms.api.cacheddata.CachedDataManager").getMethod("getMetaData").invoke(cached);
-            Class<?> metaType = Class.forName("net.luckperms.api.cacheddata.CachedMetaData");
-            Object v = metaType.getMethod("suffix".equals(which) ? "getSuffix" : "getPrefix").invoke(meta);
-            return v == null ? "" : String.valueOf(v);
+            Method gu = getUser;
+            Object mgr = manager;
+            if (gu == null || mgr == null) {
+                Class<?> api = Class.forName("net.luckperms.api.LuckPerms");
+                Class<?> users = Class.forName("net.luckperms.api.model.user.UserManager");
+                Class<?> user = Class.forName("net.luckperms.api.model.user.User");
+                Class<?> cached = Class.forName("net.luckperms.api.cacheddata.CachedDataManager");
+                Class<?> meta = Class.forName("net.luckperms.api.cacheddata.CachedMetaData");
+                Object lp = Class.forName("net.luckperms.api.LuckPermsProvider").getMethod("get").invoke(null);
+                mgr = api.getMethod("getUserManager").invoke(lp);
+                cachedData = Class.forName("net.luckperms.api.model.PermissionHolder").getMethod("getCachedData");
+                metaData = cached.getMethod("getMetaData");
+                prefix = meta.getMethod("getPrefix");
+                suffix = meta.getMethod("getSuffix");
+                primaryGroup = user.getMethod("getPrimaryGroup");
+                try {
+                    Class<?> groupManager = Class.forName("net.luckperms.api.model.group.GroupManager");
+                    groups = api.getMethod("getGroupManager").invoke(lp);
+                    getGroup = groupManager.getMethod("getGroup", String.class);
+                    friendlyName = Class.forName("net.luckperms.api.model.PermissionHolder").getMethod("getFriendlyName");
+                } catch (Throwable t) {
+                    getGroup = null; // the group name is shown as it is
+                }
+                gu = users.getMethod("getUser", UUID.class);
+                manager = mgr;
+                getUser = gu;
+            }
+            Object user = gu.invoke(mgr, id);
+            if (user == null) {
+                // not loaded yet (the top draws again when it is): empty for now, not the raw placeholder
+                for (String k : KEYS) text = text.replace(k, "");
+                return text;
+            }
+            Object meta = metaData.invoke(cachedData.invoke(user));
+            text = text.replace(KEYS[0], text(prefix.invoke(meta)));
+            text = text.replace(KEYS[1], text(suffix.invoke(meta)));
+            if (text.contains(KEYS[2])) text = text.replace(KEYS[2], groupName(text(primaryGroup.invoke(user))));
+            return text;
         } catch (Throwable t) {
-            return null;
+            broken = true; // another LuckPerms API: PlaceholderAPI does it as before
+            return text;
         }
+    }
+
+    /** The display name of the group, like the LuckPerms expansion shows it. */
+    private static String groupName(String name) {
+        if (name.isEmpty() || getGroup == null) return name;
+        try {
+            Object group = getGroup.invoke(groups, name);
+            if (group != null) {
+                Object friendly = friendlyName.invoke(group);
+                if (friendly != null) return friendly.toString();
+            }
+        } catch (Throwable ignored) {
+            // the name as it is
+        }
+        return name;
+    }
+
+    private static String text(Object o) {
+        return o == null ? "" : o.toString();
+    }
+
+    /** LuckPerms was reloaded or restarted: look it up again. */
+    public static void reset() {
+        manager = null;
+        getUser = null;
+        broken = false;
     }
 
     /**

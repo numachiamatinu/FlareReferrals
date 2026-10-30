@@ -66,6 +66,8 @@ public final class RewardManager {
         for (Milestone m : milestones.values()) {
             m.save(ms.createSection(String.valueOf(m.amount())));
         }
+        // only what changed is written: comments, quotes and layout of the file stay as they are
+        if (dev.tmdevelopment.flarereferrals.util.YamlKeeper.keep(file, yml)) return;
         try {
             dev.tmdevelopment.flarereferrals.util.J8.write(file.toPath(),
                     dev.tmdevelopment.flarereferrals.util.Headers.of(plugin, "rewards.yml") + comments(yml.saveToString()),
