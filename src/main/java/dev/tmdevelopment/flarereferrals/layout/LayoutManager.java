@@ -348,8 +348,11 @@ public final class LayoutManager {
             }
         }
         String header = dev.tmdevelopment.flarereferrals.util.Headers.of(plugin, isCustom(id) ? CUSTOM_HEADER : "menus/" + id + ".yml");
+        // a new menu (layout add, chest import): written like the other menu files, texts in "double quotes"
+        String body = isCustom(id) ? dev.tmdevelopment.flarereferrals.util.YamlKeeper.render(yml) : null;
+        if (body == null) body = yml.saveToString();
         try {
-            dev.tmdevelopment.flarereferrals.util.J8.write(new File(dir, id + ".yml").toPath(), header + yml.saveToString(), StandardCharsets.UTF_8);
+            dev.tmdevelopment.flarereferrals.util.J8.write(new File(dir, id + ".yml").toPath(), header + body, StandardCharsets.UTF_8);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save menus/" + id + ".yml: " + e.getMessage());
             return false;

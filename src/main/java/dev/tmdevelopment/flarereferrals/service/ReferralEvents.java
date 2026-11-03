@@ -234,10 +234,15 @@ public final class ReferralEvents {
             dev.tmdevelopment.flarereferrals.util.ReferralLog.log("EVENT", s.getName() + " stopped the event");
             return;
         }
-        // status
+        // details: what the event gives and how long it lasts
         if (active()) {
-            plugin.lang().send(s, "event.status", ph());
-            if (!reason.isEmpty()) plugin.lang().send(s, "event.reason", ph());
+            String[] ph = concat(concat(ph(), "%multiplied%", multiplied()), "%rewards%", boosted());
+            ph = concat(ph, "%player%", s.getName());
+            for (String line : plugin.lang().lines("event.details")) {
+                // the reason line is left out when the event has no reason
+                if (reason.isEmpty() && (line.contains("{reason}") || line.contains("%reason%"))) continue;
+                Platform.send(s, Text.parse(Text.replace(line, ph), s instanceof Player ? (Player) s : null));
+            }
         } else {
             plugin.lang().send(s, "event.none");
         }
@@ -254,6 +259,23 @@ public final class ReferralEvents {
         }, null);
     }
 
+    /** "money and currencies, items" as set in events.multiply. */
+    private String multiplied() {
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        if (cfg().getBoolean("events.multiply.currencies", true)) parts.add(plugin.lang().raw("event.parts.currencies"));
+        if (cfg().getBoolean("events.multiply.items", false) && multiplier >= 2) parts.add(plugin.lang().raw("event.parts.items"));
+        return parts.isEmpty() ? plugin.lang().raw("event.parts.none") : String.join(", ", parts);
+    }
+
+    /** "inviter, welcome, milestones" as set in events.rewards. */
+    private String boosted() {
+        java.util.List<String> parts = new java.util.ArrayList<>();
+        if (cfg().getBoolean("events.rewards.inviter", true)) parts.add(plugin.lang().raw("event.parts.inviter"));
+        if (cfg().getBoolean("events.rewards.welcome", true)) parts.add(plugin.lang().raw("event.parts.welcome"));
+        if (cfg().getBoolean("events.rewards.milestones", true)) parts.add(plugin.lang().raw("event.parts.milestones"));
+        return parts.isEmpty() ? plugin.lang().raw("event.parts.none") : String.join(", ", parts);
+    }
+
     // ---------------------------------------------------------------- on screen
 
     private String[] ph() {
@@ -267,8 +289,15 @@ public final class ReferralEvents {
         for (Player p : Bukkit.getOnlinePlayers()) {
             String[] mine = concat(ph, "%player%", p.getName());
             if (c.getBoolean("events.show.chat", true)) {
-                plugin.lang().send(p, "event.started", mine);
-                if (!reason.isEmpty()) plugin.lang().send(p, "event.reason", mine);
+                java.util.List<String> lines = plugin.lang().lines("event.started");
+                boolean inside = String.join("\n", lines).contains("{reason}");
+                for (String line : lines) {
+                    // {reason} in the message: that line is left out when there is no reason
+                    if (reason.isEmpty() && line.contains("{reason}")) continue;
+                    Platform.send(p, Text.parse(Text.replace(line, mine), p));
+                }
+                // older files without {reason}: the reason comes after the message, as before
+                if (!inside && !reason.isEmpty()) plugin.lang().send(p, "event.reason", mine);
             }
             if (c.getBoolean("events.show.title", true)) {
                 dev.tmdevelopment.flarereferrals.reward.Display d = new dev.tmdevelopment.flarereferrals.reward.Display();

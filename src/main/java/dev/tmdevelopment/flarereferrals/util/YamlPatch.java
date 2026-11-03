@@ -41,6 +41,7 @@ public final class YamlPatch {
         int hash = commentStart(rest);
         String value = (hash < 0 ? rest : rest.substring(0, hash)).trim();
         if (value.isEmpty() || value.startsWith("|") || value.startsWith(">")) return null;
+        yamlValue = sameStyle(value, yamlValue);
         String comment = "";
         if (hash >= 0) {
             int sp = hash;
@@ -49,6 +50,19 @@ public final class YamlPatch {
         }
         lines[idx] = line.substring(0, colon + 1) + " " + yamlValue + comment;
         return String.join("\n", lines);
+    }
+
+    /**
+     * The old value was written without quotes (type: yaml): a simple word stays without them (type: mysql).
+     * Words YAML would read as something else (true, no, null, numbers) keep the quotes.
+     */
+    static String sameStyle(String oldValue, String yamlValue) {
+        if (oldValue.startsWith("\"") || oldValue.startsWith("'")) return yamlValue;
+        if (yamlValue.length() < 3 || !yamlValue.startsWith("\"") || !yamlValue.endsWith("\"")) return yamlValue;
+        String inner = yamlValue.substring(1, yamlValue.length() - 1);
+        if (!inner.matches("[A-Za-z][A-Za-z0-9_.-]*")) return yamlValue;
+        if (inner.matches("(?i)y|n|yes|no|on|off|true|false|null")) return yamlValue;
+        return inner;
     }
 
     /** Position of a "#" comment in a value (outside quotes, after a space), -1 if none. */

@@ -30,7 +30,7 @@ help:
     menu: " &#ff7a6b/{label} menu &7- rewards menu"
     collect: " &#ff7a6b/{label} collect &7- rewards to collect"
     rewards: " &#ff7a6b/{label} rewards &7- inviter and welcome rewards"
-    top: " &#ff7a6b/{label} top &7- top inviters"
+    top: " &#ff7a6b/{label} top [page] &7- top inviters"
     invited: " &#ff7a6b/{label} invited &7- the players you invited"
     event: " &#ff7a6b/{label} event &7- the reward event running now"
     milestone: " &#ff7a6b/{label} milestone <n> &7- rewards of a milestone"
@@ -64,6 +64,9 @@ referral:
   success: "{prefix}&f{player} &ais now saved as the player who invited you. Enjoy your welcome reward!"
   received: "{prefix}&f{player} &aentered you as the player who invited them! &7You now have &#ff7a6b{invites} &7invites."
   broadcast: "{prefix}&f{player} &7was invited by &#ff7a6b{inviter}&7! &7({invites} invites)"
+  # config.yml > referral.inviter-title. {player} {invites}
+  received-title: "&#ff7a6b&lNew invite!"
+  received-subtitle: "&f{player} &7entered you &8· &#ff7a6b{invites} &7invites"
 
 milestone:
   ready: "{prefix}&7Milestone &#ff7a6b{name} &7reached! <click:run_command:'/referrals claim {amount}'><hover:show_text:'&7Click to collect'>&#ff7a6b&n[Collect]</hover></click>"
@@ -136,10 +139,22 @@ top:
   # PlaceholderAPI placeholders are of the player of the line: " &#ff7a6b#{position} %luckperms_prefix%&f{player} ..."
   line: " &#ff7a6b#{position} &f{player} &7- &7{invites} invites"
   empty: " &7Nobody has invited anyone yet."
+  # More players than config.yml > top.chat-lines: {previous} {next} are the arrows below, {page} {pages}
+  pages: " {previous} &7Page &f{page}&7/&f{pages} {next}"
+  previous: "<click:run_command:'/{label} top {target}'><hover:show_text:'&7Previous page'>&#ff7a6b&l«</hover></click>"
+  next: "<click:run_command:'/{label} top {target}'><hover:show_text:'&7Next page'>&#ff7a6b&l»</hover></click>"
+  no-previous: "&8&l«"
+  no-next: "&8&l»"
   footer: ""
 
 admin:
   reloaded: "{prefix}&aConfig, rewards and messages reloaded."
+  # Under "reloaded". {milestones} = turned on, {currencies} = working, {menus} {storage} {event}
+  reload-summary: "{prefix}&7Milestones &f{milestones} &8· &7currencies &f{currencies} &8· &7menus &f{menus} &8· &7storage &f{storage} &8· &7event {event}"
+  reload-currencies-off: "{prefix}&cCurrencies not working: &f{list} &7(the console says why)"
+  reload-event-on: "&#ff7a6bx{multiplier} &7({time} left)"
+  reload-event-off: "&7none"
+  reload-event-disabled: "&7off"
   # a file with a mistake is never overwritten. {file} {line} {column} {problem}
   file-error: "{prefix}&c{file} &7has a mistake around line &f{line}&7: &f{problem}&7. It was not changed: fix it and reload (until then the last working values are used)."
   milestone-created: "{prefix}&aMilestone &f{amount} invites &acreated."
@@ -396,9 +411,12 @@ event:
   started:
     - ""
     - " <gradient:#ff5f6d:#ffc371><bold>REFERRAL EVENT</bold></gradient>"
+    - " &7{reason}"
     - " &7Rewards for invites are &#ff7a6b&lx{multiplier} &7for &f{time}&7!"
     - " &7Tell your friends to join and write &#ff7a6b/referrals {player}"
+    - " <click:run_command:'/referrals event'><hover:show_text:'&7What the event gives'>&#ff7a6b&n[Info]</hover></click>"
     - ""
+  # used only when "started" has no {reason} line (files edited before 1.0.24)
   reason: " &7{reason}"
   ended: "{prefix}&7The referral event &#ff7a6bx{multiplier} &7is over. Thanks for inviting!"
   title: "&#ff7a6b&lx{multiplier} REFERRAL REWARDS"
@@ -406,8 +424,28 @@ event:
   bossbar: "&#ff7a6b&lx{multiplier} &frewards for invites &7· {time} left"
   actionbar: "&#ff7a6bx{multiplier} &7rewards for invites &8· &f{time} &7left"
   join: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time}&7. <click:run_command:'/referrals event'><hover:show_text:'&7Details'>&#ff7a6b&n[Info]</hover></click>"
-  remind: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time} &7more."
+  remind: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time} &7more. <click:run_command:'/referrals event'><hover:show_text:'&7Details'>&#ff7a6b&n[Info]</hover></click>"
   status: "{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7· &f{time} &7left"
+  # /referrals event (also the [Info] buttons). {multiplier} {time} {reason} {by} {multiplied} {rewards} {player}
+  # A line with {reason} is left out when the event has no reason
+  details:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>REFERRAL EVENT</bold></gradient>"
+    - " &7{reason}"
+    - " &7Rewards for invites: &#ff7a6b&lx{multiplier}"
+    - " &7Time left: &f{time}"
+    - " &7Multiplied: &f{multiplied}"
+    - " &7Rewards with the bonus: &f{rewards}"
+    - " &7Invite a friend: when he joins he writes &#ff7a6b/referrals {player}"
+    - ""
+  # parts of {multiplied} and {rewards}
+  parts:
+    currencies: "money and currencies"
+    items: "items"
+    inviter: "inviter"
+    welcome: "welcome"
+    milestones: "milestones"
+    none: "nothing"
   none: "{prefix}&7No referral event right now."
   bonus: "{prefix}&#ff7a6bEvent bonus: &fx{multiplier}"
   units:

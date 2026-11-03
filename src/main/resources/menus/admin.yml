@@ -48,6 +48,11 @@ settings:
       name: "&fBroadcast referrals"
       lore:
       - "&7Announce every referral to the server."
+    inviter-title:
+      name: "&fTitle for the inviter"
+      lore:
+      - "&7\"New invite!\" on the screen of the"
+      - "&7player who was entered as inviter."
     milestones-enabled:
       name: "&fMilestones"
       lore:

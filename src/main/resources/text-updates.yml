@@ -349,6 +349,17 @@ lang_en_yml:
   - ' &e/{label} reload &7- reload files'
   - ' <click:suggest_command:''/{label} migrate ''><hover:show_text:''&7Click to write it''>&e/{label} migrate <yaml|sqlite|mysql></hover></click> &7- move the data (database, network)'
   - ''
+- path: event.started
+  old:
+  - ''
+  - ' <gradient:#ff5f6d:#ffc371><bold>REFERRAL EVENT</bold></gradient>'
+  - ' &7Rewards for invites are &#ff7a6b&lx{multiplier} &7for &f{time}&7!'
+  - ' &7Tell your friends to join and write &#ff7a6b/referrals {player}'
+  - ''
+- path: event.remind
+  old: '{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time} &7more.'
+- path: help.lines.top
+  old: ' &#ff7a6b/{label} top &7- top inviters'
 menus_admin_yml:
 - path: layout.help.lore
   old:

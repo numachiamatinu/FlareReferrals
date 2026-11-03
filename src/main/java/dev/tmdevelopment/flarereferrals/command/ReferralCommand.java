@@ -120,7 +120,14 @@ public final class ReferralCommand implements TabExecutor {
             }
         else if ("top".equals(sub)) {
                 if (!plugin.canOpen(sender, "top")) return unknown(sender, label);
-                sendTop(sender);
+                int page = 1;
+                if (args.length >= 2) {
+                    try { page = Integer.parseInt(args[1]); } catch (NumberFormatException e) {
+                        lang().send(sender, "input.not-a-number", "%input%", Text.safe(args[1]));
+                        return true;
+                    }
+                }
+                sendTop(sender, label, page);
             }
         else if ("milestone".equals(sub) || "milestones".equals(sub)) {
                 if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
@@ -161,13 +168,7 @@ public final class ReferralCommand implements TabExecutor {
             }
         else if ("reload".equals(sub)) {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
-                boolean restart = plugin.reloadAll();
-                lang().send(sender, "admin.reloaded");
-                // files with a mistake: never overwritten, the owner is told where the mistake is
-                for (String[] pr : dev.tmdevelopment.flarereferrals.util.SafeYaml.problems()) {
-                    lang().send(sender, "admin.file-error", "%file%", pr[0], "%line%", pr[1], "%column%", pr[2], "%problem%", pr[3]);
-                }
-                if (restart) lang().send(sender, "admin.restart-needed");
+                plugin.reloadReport(sender, plugin.reloadAll());
             }
         else if ("admin".equals(sub)) { admin(sender, label, args); }
         else if ("about".equals(sub) || "version".equals(sub) || "ver".equals(sub)) { about(sender, label, args); }
@@ -473,8 +474,13 @@ public final class ReferralCommand implements TabExecutor {
         }
     }
 
-    private void sendTop(CommandSender to) {
-        List<PlayerData> top = plugin.data().top(10);
+    private void sendTop(CommandSender to, String label, int wanted) {
+        int per = Math.max(1, Math.min(50, plugin.getConfig().getInt("top.chat-lines", 10)));
+        List<PlayerData> all = plugin.data().top(Integer.MAX_VALUE);
+        int pages = Math.max(1, (all.size() + per - 1) / per);
+        int page = Math.max(1, Math.min(pages, wanted));
+        int from = (page - 1) * per;
+        List<PlayerData> top = new ArrayList<>(all.subList(Math.min(from, all.size()), Math.min(from + per, all.size())));
         List<java.util.UUID> offline = new ArrayList<>();
         for (PlayerData d : top) if (Bukkit.getPlayer(d.uuid()) == null) offline.add(d.uuid());
         Runnable send = () -> {
@@ -488,10 +494,24 @@ public final class ReferralCommand implements TabExecutor {
                 PlayerData d = top.get(i);
                 org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid());
                 for (String line : lines) {
-                    String text = Text.replace(line, "%position%", String.valueOf(i + 1),
+                    String text = Text.replace(line, "%position%", String.valueOf(from + i + 1),
                             "%player%", d.name(), "%invites%", String.valueOf(d.invites()));
                     // PlaceholderAPI placeholders (%luckperms_prefix%...) are of the player of this line
                     dev.tmdevelopment.flarereferrals.util.Platform.send(to, Text.parseAbout(text, who));
+                }
+            }
+            if (pages > 1) {
+                // « page 2/5 »: the arrows run /referrals top <page>
+                String[] ph = {"%label%", label, "%page%", String.valueOf(page), "%pages%", String.valueOf(pages)};
+                String prev = page > 1 ? Text.replace(lang().raw("top.previous"), "%target%", String.valueOf(page - 1), "%label%", label)
+                        : lang().raw("top.no-previous");
+                String next = page < pages ? Text.replace(lang().raw("top.next"), "%target%", String.valueOf(page + 1), "%label%", label)
+                        : lang().raw("top.no-next");
+                for (String line : lang().lines("top.pages")) {
+                    // previous / next first: their text can hold {page} too
+                    String text = Text.replace(line, "%previous%", prev, "%next%", next);
+                    dev.tmdevelopment.flarereferrals.util.Platform.send(to, Text.parse(Text.replace(text, ph),
+                            to instanceof Player ? (Player) to : null));
                 }
             }
             lang().send(to, "top.footer");

@@ -54,6 +54,9 @@ referral:
   min-playtime-minutes: 0
   # Broadcast a message to the whole server on every referral
   broadcast: false
+  # Title on the screen of the inviter when someone enters him (the chat message and the sound are always there).
+  # Texts in lang/en.yml > referral.received-title / received-subtitle
+  inviter-title: true
   # Days after the first join in which a player can still enter who invited him. 0 = no limit
   max-days-after-first-join: 0
   # The invite counts (and the rewards are given) only after the new player played these minutes. 0 = right away
@@ -82,6 +85,10 @@ player-access:
 invited:
   # Players listed by /referrals invited chat (the menu has pages)
   chat-lines: 20
+
+top:
+  # Players per page in /referrals top in chat (« » change page, or /referrals top 2)
+  chat-lines: 10
 
 milestones:
   # Give milestone rewards (every 3 / 5 / 10 ... invites)

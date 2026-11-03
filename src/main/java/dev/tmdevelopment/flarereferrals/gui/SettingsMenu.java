@@ -46,6 +46,7 @@ public final class SettingsMenu extends Menu {
             new Toggle(16, "rewards.drop-if-full", "drop-if-full", Material.HOPPER),
             new Toggle(20, "sounds.enabled", "sounds", Material.NOTE_BLOCK),
             new Toggle(22, "rewards.collect-menu", "collect-menu", Material.CHEST_MINECART),
+            new Toggle(29, "referral.inviter-title", "inviter-title", Material.ITEM_FRAME),
             // off until the admin wants them
             new Toggle(19, "invite-hint.enabled", "invite-hint", Material.OAK_SIGN, false),
             new Toggle(25, "events.enabled", "events", Material.FIREWORK_ROCKET, false),
@@ -132,9 +133,7 @@ public final class SettingsMenu extends Menu {
         set(40, button(Material.KNOWLEDGE_BOOK, "gui.settings.top"), e -> new TopMenu(plugin, viewer, this).openLater());
 
         set(48, button(Material.LIME_DYE, "gui.settings.reload"), e -> {
-            boolean restart = plugin.reloadAll();
-            lang().send(viewer, "admin.reloaded");
-            if (restart) lang().send(viewer, "admin.restart-needed");
+            plugin.reloadReport(viewer, plugin.reloadAll());
             openLater();
         });
         backButton(49, null);

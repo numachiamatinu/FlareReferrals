@@ -390,6 +390,34 @@ public final class FlareReferrals extends JavaPlugin {
         return restart;
     }
 
+    /** After a reload: what was loaded, files with a mistake, restart needed. */
+    public void reloadReport(org.bukkit.command.CommandSender to, boolean restart) {
+        lang.send(to, "admin.reloaded");
+        int milestones = 0;
+        if (getConfig().getBoolean("milestones.enabled", true)) for (dev.tmdevelopment.flarereferrals.reward.Milestone m : rewards.milestones()) if (m.enabled()) milestones++;
+        java.util.List<String> broken = new java.util.ArrayList<>();
+        for (dev.tmdevelopment.flarereferrals.currency.Currency c : currencies.all()) {
+            if (currencies.problem(c) != null) broken.add(c.id());
+        }
+        String event = !events.enabled() ? lang.raw("admin.reload-event-disabled")
+                : events.active() ? dev.tmdevelopment.flarereferrals.util.Text.replace(lang.raw("admin.reload-event-on"),
+                        "%multiplier%", dev.tmdevelopment.flarereferrals.service.ReferralEvents.format(events.multiplier()),
+                        "%time%", events.duration(events.millisLeft()))
+                : lang.raw("admin.reload-event-off");
+        lang.send(to, "admin.reload-summary",
+                "%milestones%", String.valueOf(milestones),
+                "%currencies%", String.valueOf(currencies.all().size() - broken.size()),
+                "%menus%", String.valueOf(layouts.allIds().size()),
+                "%storage%", data.type(),
+                "%event%", event);
+        if (!broken.isEmpty()) lang.send(to, "admin.reload-currencies-off", "%list%", String.join(", ", broken));
+        // files with a mistake: never overwritten, the owner is told where the mistake is
+        for (String[] pr : dev.tmdevelopment.flarereferrals.util.SafeYaml.problems()) {
+            lang.send(to, "admin.file-error", "%file%", pr[0], "%line%", pr[1], "%column%", pr[2], "%problem%", pr[3]);
+        }
+        if (restart) lang.send(to, "admin.restart-needed");
+    }
+
     private java.util.List<dev.tmdevelopment.flarereferrals.reward.RewardSet> allRewards() {
         java.util.List<dev.tmdevelopment.flarereferrals.reward.RewardSet> all = new java.util.ArrayList<>();
         all.add(rewards.inviter());

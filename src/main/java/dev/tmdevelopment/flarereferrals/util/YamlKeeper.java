@@ -86,6 +86,26 @@ public final class YamlKeeper {
         }
     }
 
+    /**
+     * A whole new file written like the files of the plugin (strings in double quotes, lists indented by 2).
+     * @return null when it could not be done safely: the caller uses Bukkit's saveToString
+     */
+    public static String render(YamlConfiguration now) {
+        try {
+            List<String> lines = new ArrayList<>();
+            for (String key : now.getKeys(false)) {
+                if (key.contains(".")) return null;
+                lines.addAll(fragment(key, now.get(key), 2));
+            }
+            String text = String.join("\n", lines) + "\n";
+            YamlConfiguration check = new YamlConfiguration();
+            check.loadFromString(text);
+            return sameLeaves(leaves(check), leaves(now)) ? text : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static boolean section(ConfigurationSection old, ConfigurationSection now, String base, String[] out, int listIndent) {
         Set<String> keys = new LinkedHashSet<>();
         ConfigurationSection o = base.isEmpty() ? old : old.getConfigurationSection(base);

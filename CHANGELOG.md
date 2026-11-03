@@ -2,6 +2,24 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.0.24
+### New
+- **Event details**: `/referrals event` now shows what the running event gives: multiplier, time left, reason,
+  what is multiplied (currencies, items) and which rewards get the bonus. The start message and the reminders have
+  a clickable `[Info]` that opens it (the join message already had it). Texts in `lang/en.yml > event.details`.
+- **"New invite!" title** for the inviter when someone enters him, also on a network (`referral.inviter-title`, on
+  by default, also in `/referrals settings`). The chat message and the sound were already there.
+- **Pages in `/referrals top`**: `top.chat-lines` players per page (10), clickable `« »` arrows in chat, or
+  `/referrals top 2`. Before, the chat top showed only the first 10.
+- **`/referrals reload` says what it loaded**: milestones turned on, working currencies, menus, storage and event,
+  and which currencies don't work. Same from the Reload button in `/referrals settings`.
+
+### Fixed
+- `/referrals migrate` wrote `type: "mysql"` with quotes in config.yml. Values you wrote without quotes stay
+  without them when the plugin changes them (`type: mysql`, `language: it`).
+- Menus made with `/referrals layout add` / the chest builder were saved with `' '` quotes: they are now written like
+  the other menu files, texts in double quotes.
+
 ## 1.0.23
 ### New (all off until you turn them on)
 - **Who invited you?** `invite-hint` in config.yml (or `/referrals settings`): new players who didn't write

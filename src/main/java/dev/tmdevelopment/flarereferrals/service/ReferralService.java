@@ -904,12 +904,22 @@ public final class ReferralService {
         if (p != null) {
             lang().send(p, key, ph);
             sound(p, "success");
+            if ("referral.received".equals(key)) inviterTitle(p, ph);
             return;
         }
         if (!plugin.data().network()) return;
         StringBuilder sb = new StringBuilder(key);
         for (String s : ph) sb.append(SEP).append(s);
         plugin.data().publish("msg", target, sb.toString());
+    }
+
+    /** "New invite!" title for the inviter (config.yml referral.inviter-title). */
+    private void inviterTitle(Player p, String... ph) {
+        if (!cfg().getBoolean("referral.inviter-title", true)) return;
+        dev.tmdevelopment.flarereferrals.reward.Display d = new dev.tmdevelopment.flarereferrals.reward.Display();
+        d.title(lang().raw("referral.received-title"));
+        d.subtitle(lang().raw("referral.received-subtitle"));
+        ScreenEffects.show(plugin, p, d, ph);
     }
 
     /** Broadcast on this server and, on a network, on every other server. */
@@ -952,6 +962,7 @@ public final class ReferralService {
             System.arraycopy(parts, 1, ph, 0, ph.length);
             lang().send(p, parts[0], ph);
             sound(p, "success");
+            if ("referral.received".equals(parts[0])) inviterTitle(p, ph);
         } else if ("collect".equals(type) && target != null) {
             Player p = Bukkit.getPlayer(target);
             int i = data.indexOf(SEP);
