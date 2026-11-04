@@ -119,6 +119,8 @@ public final class ReferralService {
         }
         // the inviter: anyone with data (on a network: any server), or a player this server knows
         PlayerData targetData = plugin.data().byName(targetName);
+        // not a name: maybe the personal code of the inviter (/referrals code)
+        if (targetData == null && codes() && validCode(targetName)) targetData = plugin.data().byCode(targetName);
         UUID targetId;
         String targetReal;
         if (targetData != null) {
@@ -209,7 +211,7 @@ public final class ReferralService {
                 return new Outcome(ALREADY);
             }
             if (pending) return new Outcome(OK_PENDING);
-            return complete(ops, r, userId, targetId, ctx, targetQueue);
+            return complete(ops, r, userId, targetId, ctx, targetQueue, played);
         }, out -> {
             busy.remove(userId);
             Player u = Bukkit.getPlayer(userId);
@@ -255,8 +257,12 @@ public final class ReferralService {
     }
 
     /** The invite counts: +1 to the inviter and every reward created. Runs inside the transaction. */
-    private Outcome complete(Ops ops, Rules r, UUID user, UUID target, String ctx, boolean targetQueue) {
+    /** Marker on the invited player: his playtime (minutes) when the invite counted (active-friends goals). */
+    public static final String PLAYTIME_MARK = "playtime-at-invite";
+
+    private Outcome complete(Ops ops, Rules r, UUID user, UUID target, String ctx, boolean targetQueue, int playedNow) {
         Outcome out = new Outcome(OK);
+        ops.addReward(user, PLAYTIME_MARK, "base:" + Math.max(0, playedNow), RewardEntry.State.DELIVERED);
         out.invites = ops.addInvites(target, 1);
         // r.inviter / r.invited = turned on: a turned off reward is saved anyway and waits (no message now)
         RewardEntry ue = ops.addReward(user, "referral:invited", "referral:invited" + ctx + r.bonusWelcome,
@@ -360,9 +366,10 @@ public final class ReferralService {
         Rules r = rules(d.referredAt() > 0 ? d.referredAt() : System.currentTimeMillis());
         boolean targetQueue = r.queue || Bukkit.getPlayer(targetId) != null;
         String ctx = "|" + targetReal + "|" + userName;
+        int playedNow = playtimeMinutes(p, d);
         plugin.data().run(ops -> {
             if (!ops.verify(userId)) return new Outcome(ALREADY);
-            return complete(ops, r, userId, targetId, ctx, targetQueue);
+            return complete(ops, r, userId, targetId, ctx, targetQueue, playedNow);
         }, out -> {
             busy.remove(userId);
             if (out == null || out.code != OK) return;
@@ -374,6 +381,120 @@ public final class ReferralService {
             }
             completed(userId, userName, targetId, targetReal, out);
         });
+    }
+
+    // ------------------------------------------------------------------ other rewards (active friends, period top)
+
+    /**
+     * Creates one reward for a player (once: {@code uniq}) and gives it or puts it in his collect menu, as set
+     * for that reward. Works for offline players too (queue). {@code done} gets true when it was created now.
+     */
+    public void grant(UUID owner, String uniq, String reward, RewardSet set, java.util.function.Consumer<Boolean> done) {
+        // always kept for offline players (rewards.offline-queue is for the invite rewards): the owner is often offline
+        RewardEntry.State state = stateFor(set);
+        plugin.data().run(ops -> ops.addReward(owner, uniq, reward, state), e -> {
+            if (done != null) done.accept(e != null);
+            if (e == null) return;
+            created(owner, e, set);
+        });
+    }
+
+    /** Waits in the collect menu or is given at the next join / right away. */
+    public RewardEntry.State stateFor(RewardSet set) {
+        return inMenu(set) ? RewardEntry.State.CLAIMABLE : RewardEntry.State.PENDING;
+    }
+
+    /** A reward made by {@link #grant} (or by the weekly top): menu refresh, notice, given if online. */
+    public void created(UUID owner, RewardEntry e, RewardSet set) {
+        refreshMenu(owner);
+        if (e.state() == RewardEntry.State.CLAIMABLE && set.enabled()) {
+            List<RewardEntry> one = new ArrayList<>();
+            one.add(e);
+            notifyCollect(owner, one, true);
+        }
+        Player p = Bukkit.getPlayer(owner);
+        if (p != null) deliverPending(p, false);
+    }
+
+    /** config.yml active-friends: the inviter of this player gets the playtime goals this player reached. */
+    public void checkGoals(Player p) {
+        if (!cfg().getBoolean("active-friends.enabled", false) || plugin.rewards().goals().isEmpty()) return;
+        PlayerData d = plugin.data().get(p.getUniqueId());
+        if (d == null || d.referredBy() == null || d.pendingInvite()) return;
+        // playtime since the invite counted (marker saved since 1.1.0); older invites only with old-invites: true
+        int base = -1;
+        for (RewardEntry e : d.rewards()) {
+            if (!PLAYTIME_MARK.equals(e.uniq())) continue;
+            try {
+                base = Integer.parseInt(e.reward().substring("base:".length()));
+            } catch (RuntimeException ignored) {
+                base = 0;
+            }
+        }
+        if (base < 0) {
+            if (!cfg().getBoolean("active-friends.old-invites", false)) return;
+            base = 0;
+        }
+        PlayerData inviter = plugin.data().get(d.referredBy());
+        if (inviter == null) return;
+        int played = playtimeMinutes(p, d) - base;
+        for (dev.tmdevelopment.flarereferrals.reward.Goal g : plugin.rewards().goals()) {
+            if (played < g.minutes()) break; // sorted by minutes
+            String uniq = "goal:" + g.minutes() + "@" + p.getUniqueId();
+            if (inviter.hasUniq(uniq) || !goalBusy.add(uniq)) continue;
+            String friend = p.getName();
+            grant(inviter.uuid(), uniq, g.id() + "|" + inviter.name() + "|" + friend, g, created -> {
+                goalBusy.remove(uniq);
+                if (created) {
+                    dev.tmdevelopment.flarereferrals.util.ReferralLog.log("GOAL", friend + " played "
+                            + dev.tmdevelopment.flarereferrals.reward.Goal.time(g.minutes()) + ": reward for " + inviter.name());
+                }
+            });
+        }
+    }
+
+    private final java.util.Set<String> goalBusy = new java.util.HashSet<>();
+
+    // ------------------------------------------------------------------ personal codes
+
+    private static final String CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    /** config.yml codes.enabled */
+    public boolean codes() {
+        return cfg().getBoolean("codes.enabled", true);
+    }
+
+    /** "K7QM2X": letters and numbers that can't be mixed up (no O/0, I/1/L). */
+    public static boolean validCode(String s) {
+        if (s == null || s.length() < 4 || s.length() > 12) return false;
+        for (char c : s.toUpperCase(java.util.Locale.ROOT).toCharArray()) if (CODE_CHARS.indexOf(c) < 0) return false;
+        return true;
+    }
+
+    /** The code of this player; a new one is made the first time. {@code done} gets null on a database error. */
+    public void code(Player p, java.util.function.Consumer<String> done) {
+        PlayerData d = plugin.data().get(p.getUniqueId());
+        if (d != null && validCode(d.code())) {
+            done.accept(d.code().toUpperCase(java.util.Locale.ROOT));
+            return;
+        }
+        UUID id = p.getUniqueId();
+        String name = p.getName();
+        int length = Math.max(5, Math.min(8, cfg().getInt("codes.length", 6)));
+        plugin.data().run(ops -> {
+            PlayerData now = ops.touch(id, name, null, 0);
+            if (now != null && validCode(now.code())) return now.code().toUpperCase(java.util.Locale.ROOT);
+            for (int tries = 0; tries < 20; tries++) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < length; i++) sb.append(CODE_CHARS.charAt(RANDOM.nextInt(CODE_CHARS.length())));
+                String c = sb.toString();
+                // a code that is also a player's name would be confusing
+                if (plugin.data().byName(c) != null) continue;
+                if (ops.setCode(id, c)) return c;
+            }
+            return null;
+        }, done);
     }
 
     // ------------------------------------------------------------------ milestones
@@ -398,6 +519,8 @@ public final class ReferralService {
     public String rewardName(RewardEntry e) {
         RewardSet set = plugin.rewards().resolve(e.key());
         if (set instanceof Milestone) return ((Milestone) set).name();
+        if (set instanceof dev.tmdevelopment.flarereferrals.reward.Goal) return ((dev.tmdevelopment.flarereferrals.reward.Goal) set).name();
+        if (set instanceof dev.tmdevelopment.flarereferrals.reward.TopReward) return ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).name();
         if (e.key().equals("referral:inviter")) return lang().raw("gui.names.inviter");
         if (e.key().equals("referral:invited")) return lang().raw("gui.names.invited");
         return e.key();
@@ -846,7 +969,17 @@ public final class ReferralService {
         double multiplier = parts.length > 3 ? ReferralEvents.parse(parts[3]) : 1.0;
         PlayerData d = plugin.data().get(p.getUniqueId());
         String milestone = set instanceof Milestone ? String.valueOf(((Milestone) set).amount()) : "";
+        String goal = set instanceof dev.tmdevelopment.flarereferrals.reward.Goal
+                ? dev.tmdevelopment.flarereferrals.reward.Goal.time(((dev.tmdevelopment.flarereferrals.reward.Goal) set).minutes()) : "";
+        boolean top = set instanceof dev.tmdevelopment.flarereferrals.reward.TopReward;
+        String position = top ? String.valueOf(((dev.tmdevelopment.flarereferrals.reward.TopReward) set).position()) : "";
+        String period = top ? lang().raw("period." + ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).period() + ".word") : "";
+        String periodInvites = top && parts.length > 4 ? parts[4] : "";
         String[] ph = {
+                "%goal%", goal,
+                "%position%", position,
+                "%period%", period,
+                "%period-invites%", periodInvites,
                 "%player%", p.getName(),
                 "%uuid%", p.getUniqueId().toString(),
                 "%invites%", String.valueOf(d == null ? 0 : d.invites()),
@@ -891,8 +1024,11 @@ public final class ReferralService {
         sound(p, "reward");
         if (multiplies(set, multiplier)) lang().send(p, "event.bonus", "%multiplier%", ReferralEvents.format(multiplier));
         String what = set instanceof Milestone ? "milestone " + milestone : parts[0].startsWith("referral:inviter") ? "inviter reward"
-                : parts[0].startsWith("referral:invited") ? "welcome reward" : parts[0];
-        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (invited.isEmpty() || set instanceof Milestone ? "" : " (" + inviter + " <- " + invited + ")")
+                : parts[0].startsWith("referral:invited") ? "welcome reward"
+                : !goal.isEmpty() ? "active friend reward (" + invited + " played " + goal + ")"
+                : top ? "#" + position + " " + ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).period() + " top reward" : parts[0];
+        boolean plain = invited.isEmpty() || set instanceof Milestone || top || !goal.isEmpty();
+        dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (plain ? "" : " (" + inviter + " <- " + invited + ")")
                 + (multiplies(set, multiplier) ? " x" + ReferralEvents.format(multiplier) + " (event)" : ""));
     }
 
@@ -997,6 +1133,7 @@ public final class ReferralService {
                 if (!now.isOnline()) return;
                 deliverPending(now, true);
                 checkVerify(now);
+                checkGoals(now);
             }, 40L);
         });
     }
@@ -1019,6 +1156,7 @@ public final class ReferralService {
         if (cfg().getInt("referral.verify-after-minutes", 0) > 0) {
             for (Player p : Bukkit.getOnlinePlayers()) checkVerify(p);
         }
+        for (Player p : Bukkit.getOnlinePlayers()) checkGoals(p);
         // reminder while something waits in the collect menu
         int every = cfg().getInt("rewards.remind-minutes", 10);
         if (every > 0) {

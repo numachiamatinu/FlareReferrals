@@ -30,6 +30,7 @@ public final class FlareReferrals extends JavaPlugin {
     private ReferralService referrals;
     private ChatInput chatInput;
     private dev.tmdevelopment.flarereferrals.service.ReferralEvents events;
+    private dev.tmdevelopment.flarereferrals.service.PeriodTops periods;
     private dev.tmdevelopment.flarereferrals.service.InviteHint hints;
     private TMDStats stats;
     private dev.tmdevelopment.flarereferrals.update.UpdateChecker updates;
@@ -133,6 +134,8 @@ public final class FlareReferrals extends JavaPlugin {
         referrals.checkServers();
         events = new dev.tmdevelopment.flarereferrals.service.ReferralEvents(this);
         events.load();
+        periods = new dev.tmdevelopment.flarereferrals.service.PeriodTops(this);
+        periods.load();
         hints = new dev.tmdevelopment.flarereferrals.service.InviteHint(this);
         hints.reload();
         dev.tmdevelopment.flarereferrals.util.ReferralLog.start(this, getConfig().getBoolean("logs.referrals", true),
@@ -170,6 +173,8 @@ public final class FlareReferrals extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, () -> data.save(), 6000L, 6000L);
         // network playtime + invites waiting for referral.verify-after-minutes
         Bukkit.getScheduler().runTaskTimer(this, () -> referrals.minute(), 1200L, 1200L);
+        // weekly / monthly top: notices when a week or month ends (first check right after the start)
+        Bukkit.getScheduler().runTaskTimer(this, () -> periods.minute(), 200L, 1200L);
         for (Player p : Bukkit.getOnlinePlayers()) referrals.join(p); // /reload or plugin managers
 
         startMetrics();
@@ -498,6 +503,7 @@ public final class FlareReferrals extends JavaPlugin {
     public ReferralService referrals() { return referrals; }
     public ChatInput chatInput() { return chatInput; }
     public dev.tmdevelopment.flarereferrals.service.ReferralEvents events() { return events; }
+    public dev.tmdevelopment.flarereferrals.service.PeriodTops periods() { return periods; }
     public dev.tmdevelopment.flarereferrals.service.InviteHint hints() { return hints; }
     public dev.tmdevelopment.flarereferrals.update.UpdateChecker updates() { return updates; }
 

@@ -424,6 +424,16 @@ public final class YamlStorage implements Storage {
         }
 
         @Override
+        public boolean setCode(UUID uuid, String code) {
+            for (PlayerData o : players.values()) {
+                if (code.equalsIgnoreCase(o.code()) && !o.uuid().equals(uuid)) return false;
+            }
+            // not urgent: written with the next normal save
+            create(uuid, null).code(code.toUpperCase(java.util.Locale.ROOT));
+            return true;
+        }
+
+        @Override
         public void addPlaytime(UUID uuid, long seconds) {
             PlayerData d = players.get(uuid);
             if (d != null) d.playtime(d.playtime() + seconds);

@@ -52,6 +52,21 @@ public final class PlayerData {
     public void code(String v) { code = v; }
     public List<RewardEntry> rewards() { return rewards; }
 
+    /**
+     * When the invite of this player counted: after the playtime check (referral.verify-after-minutes) it is later
+     * than when it was written. Invites of versions before 1.1.0 have only the time they were written.
+     */
+    public long countedAt() {
+        try {
+            for (RewardEntry e : rewards) {
+                if ("playtime-at-invite".equals(e.uniq()) && e.created() > 0) return e.created();
+            }
+        } catch (RuntimeException changedMeanwhile) {
+            // read from another thread (placeholders) while the list changed: the time it was written
+        }
+        return referredAt;
+    }
+
     public RewardEntry reward(long id) {
         for (RewardEntry e : rewards) if (e.id() == id) return e;
         return null;

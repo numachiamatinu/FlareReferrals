@@ -48,6 +48,18 @@ settings:
       name: "&fBroadcast referrals"
       lore:
       - "&7Announce every referral to the server."
+    active-friends:
+      name: "&fActive friends"
+      lore:
+      - "&7The inviter gets a reward when his"
+      - "&7friend plays 1h, 5h, 10h..."
+      - "&7Goals: &frewards.yml > active-friends"
+    period-top:
+      name: "&fWeekly and monthly top"
+      lore:
+      - "&7Rewards for the best inviters"
+      - "&7when a week / month ends."
+      - "&7Rewards: &frewards.yml > period-top"
     inviter-title:
       name: "&fTitle for the inviter"
       lore:
@@ -359,6 +371,16 @@ access:
       lore:
       - "&7/referrals collect: rewards"
       - "&7waiting to be taken."
+    code:
+      name: "&fPersonal code"
+      lore:
+      - "&7/referrals code: a code like K7QM2X"
+      - "&7friends can write instead of the name."
+    share:
+      name: "&fShare message"
+      lore:
+      - "&7/referrals share: a ready message"
+      - "&7to copy or post in the chat."
     invited:
       name: "&fYour invited players"
       lore:

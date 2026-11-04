@@ -4,6 +4,8 @@
 #  inviter      the player written in /referrals <player>
 #  invited      the new player who uses /referrals <player>
 #  milestones   extra rewards at X invites   ·   repeat: true = every X (3, 6, 9...)
+#  active-friends  for the inviter when a player he invited reaches X minutes of playtime (config.yml active-friends)
+#  period-top   for the best inviters of the week / month (config.yml period-top)
 #
 #  items        drag them in-game, or "DIAMOND:5"
 #  currencies   <id from config.yml>: <amount>
@@ -13,6 +15,7 @@
 #  delivery     default (config.yml rewards.collect-menu) · menu = waits in /referrals collect · auto = given right away
 #  servers      network only: where it can be received   ·   [all] or [skyblock, survival]
 #  Placeholders {player} {invites} {milestone} {inviter} {invited} {prefix}
+#               active-friends: {invited} {goal}   ·   period-top: {position} {period} {period-invites}
 #
 #  ── Format ──────────────────────────────────────────────
 #  Colors    &a &c &e &f &7 ...   &l bold  &o italic  &n underline
@@ -156,3 +159,72 @@ milestones:
         color: YELLOW
         style: PROGRESS
         seconds: 6
+
+# Rewards for the inviter when a player he invited keeps playing. The key is the playtime of the invited player
+# after the invite, in minutes (60 = 1 hour). Each goal is given once for every invited player. Turn it on in config.yml
+# (active-friends.enabled: true). {invited} = the friend, {goal} = the playtime ("5h")
+active-friends:
+  '60':
+    name: "&#ff7a6bFriend played 1 hour"
+    currencies:
+      money: 250
+    messages:
+      - "{prefix}&f{invited} &7played &f{goal}&7: &a+$250 &7for inviting him!"
+  '300':
+    name: "&#ff7a6bFriend played 5 hours"
+    currencies:
+      money: 1000
+    messages:
+      - "{prefix}&f{invited} &7played &f{goal}&7: &a+$1000 &7for inviting him!"
+  '600':
+    name: "<gradient:#ff5f6d:#ffc371>Friend played 10 hours</gradient>"
+    items:
+      - "DIAMOND:5"
+    currencies:
+      money: 2500
+    messages:
+      - "{prefix}&f{invited} &7played &f{goal}&7: &a+$2500 &7and &b5 diamonds&7!"
+
+# Rewards for the best inviters of the week and of the month, given when it ends. Key = position (1 = first).
+# Turn it on in config.yml (period-top). {position} {period} = "week" / "month", {period-invites} = his invites then
+period-top:
+  weekly:
+    '1':
+      name: "&#ff7a6b#1 of the week"
+      currencies:
+        money: 5000
+      messages:
+        - "{prefix}&aYou were &f#1 &aof the week with &f{period-invites} &ainvites!"
+    '2':
+      name: "&#ff7a6b#2 of the week"
+      currencies:
+        money: 2500
+      messages:
+        - "{prefix}&aYou were &f#2 &aof the week with &f{period-invites} &ainvites!"
+    '3':
+      name: "&#ff7a6b#3 of the week"
+      currencies:
+        money: 1000
+      messages:
+        - "{prefix}&aYou were &f#3 &aof the week with &f{period-invites} &ainvites!"
+  monthly:
+    '1':
+      name: "<gradient:#ff5f6d:#ffc371>#1 of the month</gradient>"
+      items:
+        - "NETHERITE_INGOT:1"
+      currencies:
+        money: 20000
+      messages:
+        - "{prefix}&aYou were &f#1 &aof the month with &f{period-invites} &ainvites!"
+    '2':
+      name: "&#ff7a6b#2 of the month"
+      currencies:
+        money: 10000
+      messages:
+        - "{prefix}&aYou were &f#2 &aof the month with &f{period-invites} &ainvites!"
+    '3':
+      name: "&#ff7a6b#3 of the month"
+      currencies:
+        money: 5000
+      messages:
+        - "{prefix}&aYou were &f#3 &aof the month with &f{period-invites} &ainvites!"

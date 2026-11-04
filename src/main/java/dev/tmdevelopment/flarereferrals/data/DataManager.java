@@ -437,6 +437,15 @@ public final class DataManager {
         return found;
     }
 
+    /** The player with this personal code (/referrals code), null if none. */
+    public PlayerData byCode(String code) {
+        if (code == null) return null;
+        for (PlayerData d : players.values()) {
+            if (code.equalsIgnoreCase(d.code())) return d;
+        }
+        return null;
+    }
+
     /** Every player as it is in memory (read only: placeholders, counts). */
     public java.util.Collection<PlayerData> snapshotView() {
         return java.util.Collections.unmodifiableCollection(players.values());

@@ -81,6 +81,10 @@ player-access:
   # /referrals invited (the players you invited, with the date): off until you turn it on.
   # Add the "Your invited players" button to /referrals menu in its editor (Menu layouts > main)
   invited: false
+  # /referrals code (needs codes.enabled)
+  code: true
+  # /referrals share
+  share: true
 
 invited:
   # Players listed by /referrals invited chat (the menu has pages)
@@ -89,6 +93,54 @@ invited:
 top:
   # Players per page in /referrals top in chat (« » change page, or /referrals top 2)
   chat-lines: 10
+
+# ── Personal codes ──────────────────────────────────────
+# /referrals code gives every player a code like K7QM2X: friends can write /referrals K7QM2X instead of the name
+# (handy for Bedrock names with a dot or players who change name). A real name always wins over a code.
+# Placeholder %flarereferrals_code%
+codes:
+  enabled: true
+  # Letters of a new code (5-8). Codes already made keep their length
+  length: 6
+
+# ── Share ───────────────────────────────────────────────
+# /referrals share shows a ready message with [Copy] and [Post in chat]. {player} {code} {address}
+share:
+  # Your server address, e.g. play.myserver.net ("" = "the server")
+  address: ""
+  text: "Join {address} and write /referrals {code} to get a welcome reward!"
+  # Used when codes are off
+  text-no-code: "Join {address} and write /referrals {player} to get a welcome reward!"
+  # Minutes between two [Post in chat] of the same player (admins: no wait). 0 = no limit
+  chat-cooldown-minutes: 10
+
+# ── Active friends ──────────────────────────────────────
+# The inviter gets a reward when a player he invited reaches a playtime: 1 hour, 5 hours, 10 hours...
+# It rewards friends who really play, not accounts made for the invite. Goals and rewards: rewards.yml > active-friends.
+# Only the playtime after the invite counted (the whole network with network.enabled). Off by default.
+active-friends:
+  enabled: false
+  # Goals count the playtime after the invite counted. Invites made before 1.1.0 don't know it:
+  # false = they give no goals, true = they count all their playtime (turning it on may pay many goals at once)
+  old-invites: false
+
+# ── Weekly and monthly top ──────────────────────────────
+# /referrals top weekly and /referrals top monthly show the invites of this week / month (always on).
+# With enabled: true the best inviters get the rewards of rewards.yml > period-top when the week / month ends,
+# and the winners are announced. An invite counts in the week in which it was written. Off by default.
+# Placeholders: %flarereferrals_weekly_invites% _weekly_position _weekly_time %flarereferrals_top_weekly_<n>_name%
+# (_invites, _line), the same with monthly
+period-top:
+  enabled: false
+  weekly-rewards: true
+  monthly-rewards: true
+  # Message to everyone with the first players when a week / month ends (texts in lang/en.yml > period)
+  announce: true
+  announce-lines: 3
+  # MONDAY ... SUNDAY
+  week-starts: MONDAY
+  # "" = the time zone of the server. Examples: Europe/Rome, Europe/London, America/New_York, UTC
+  timezone: ""
 
 milestones:
   # Give milestone rewards (every 3 / 5 / 10 ... invites)

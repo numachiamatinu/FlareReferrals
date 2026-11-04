@@ -2,23 +2,48 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.1.0
+### Added
+- Weekly and monthly top: `/referrals top weekly` and `/referrals top monthly` (with pages) show the invites of this
+  week / month. With `period-top.enabled: true` in config.yml (default false) the best inviters get the rewards of
+  `rewards.yml > period-top` when the week / month ends, and the winners are announced. Time zone and first day of
+  the week in the config. On a network the rewards are given once. New placeholders: `weekly_invites`,
+  `weekly_position`, `weekly_time`, `top_weekly_<n>_name` / `_invites` / `_line`, the same with `monthly`.
+- Active friends: `active-friends.enabled` in config.yml (default false). The inviter gets a reward when a player he
+  invited plays 1 hour, 5 hours, 10 hours... after the invite (goals and rewards in `rewards.yml > active-friends`).
+  It rewards friends who really play.
+- Personal codes: `/referrals code` gives every player a code like `K7QM2X`, click to copy. Friends write
+  `/referrals K7QM2X` instead of the name, handy for Bedrock names and players who change name. On by default
+  (`codes.enabled`), permission `flarereferrals.code` (everyone). Placeholder `%flarereferrals_code%`.
+- `/referrals share`: a ready message with the server address and your code, with [Copy] and [Post in chat]
+  (cooldown `share.chat-cooldown-minutes`, default 10). Text and address in `config.yml > share`. Permission
+  `flarereferrals.share` (everyone).
+- `/referrals stats` for the staff: invites today, this week and this month, all invites, invites waiting for the
+  playtime, rewards waiting, top 3 of the week and of the month. Permission `flarereferrals.stats` (admins).
+- `/referrals settings`: switches for active friends and the weekly / monthly top, player access for code and share.
+
+The new options and texts are added to your config.yml, lang/en.yml and menus/admin.yml on the first start, and rewards.yml gets the example rewards of the two new sections once (off until you turn them on in config.yml). The rest of the files is not touched.
+
 ## 1.0.24
-### New
-- **Event details**: `/referrals event` now shows what the running event gives: multiplier, time left, reason,
-  what is multiplied (currencies, items) and which rewards get the bonus. The start message and the reminders have
-  a clickable `[Info]` that opens it (the join message already had it). Texts in `lang/en.yml > event.details`.
-- **"New invite!" title** for the inviter when someone enters him, also on a network (`referral.inviter-title`, on
-  by default, also in `/referrals settings`). The chat message and the sound were already there.
-- **Pages in `/referrals top`**: `top.chat-lines` players per page (10), clickable `« »` arrows in chat, or
-  `/referrals top 2`. Before, the chat top showed only the first 10.
-- **`/referrals reload` says what it loaded**: milestones turned on, working currencies, menus, storage and event,
-  and which currencies don't work. Same from the Reload button in `/referrals settings`.
+### Added
+- Event details: `/referrals event` shows what the running event gives: multiplier, time left, reason, what is
+  multiplied and which rewards get the bonus. The start message and the reminders have a clickable `[Info]` that
+  opens it. Texts in `lang/en.yml > event.details`.
+- "New invite!" title: `referral.inviter-title` in config.yml (default true). The inviter sees it when someone
+  enters him, also on a network. The chat message and the sound stay as before. Also in `/referrals settings`.
+- Pages in the chat top: `top.chat-lines` in config.yml (default 10). Clickable `« »` arrows, or `/referrals top 2`.
+  Before, the chat top showed only the first 10.
+
+### Improved
+- `/referrals reload` says what it loaded: milestones, working currencies, menus, storage and event, and which
+  currencies don't work. Same from the Reload button in `/referrals settings`.
 
 ### Fixed
-- `/referrals migrate` wrote `type: "mysql"` with quotes in config.yml. Values you wrote without quotes stay
-  without them when the plugin changes them (`type: mysql`, `language: it`).
-- Menus made with `/referrals layout add` / the chest builder were saved with `' '` quotes: they are now written like
-  the other menu files, texts in double quotes.
+- `/referrals migrate` wrote `type: "mysql"` with quotes in config.yml. Values you wrote without quotes now stay
+  without them when the plugin changes them.
+- Menus made with the chest builder were saved with `' '` quotes: they are now written like the other menu files.
+
+The new options and texts are added to your config.yml, lang/en.yml and menus/admin.yml on the first start, the rest of the files is not touched.
 
 ## 1.0.23
 ### New (all off until you turn them on)

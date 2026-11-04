@@ -28,7 +28,7 @@ public final class ReferralCommand implements TabExecutor {
 
     private static final Set<String> SUBS = new java.util.HashSet<>(java.util.Arrays.asList("info", "menu", "rewards",
             "top", "milestone", "milestones", "claim", "settings", "reload", "admin", "help", "cancel", "layout", "layouts", "migrate", "collect", "version", "ver", "about",
-            "by", "invited", "event", "events"));
+            "by", "invited", "event", "events", "code", "share", "stats"));
 
     private final FlareReferrals plugin;
 
@@ -120,14 +120,22 @@ public final class ReferralCommand implements TabExecutor {
             }
         else if ("top".equals(sub)) {
                 if (!plugin.canOpen(sender, "top")) return unknown(sender, label);
+                // /referrals top [weekly|monthly] [page]
+                String period = null;
+                int at = 1;
+                if (args.length >= 2 && dev.tmdevelopment.flarereferrals.service.PeriodTops.valid(args[1].toLowerCase(Locale.ROOT))) {
+                    period = args[1].toLowerCase(Locale.ROOT);
+                    at = 2;
+                }
                 int page = 1;
-                if (args.length >= 2) {
-                    try { page = Integer.parseInt(args[1]); } catch (NumberFormatException e) {
-                        lang().send(sender, "input.not-a-number", "%input%", Text.safe(args[1]));
+                if (args.length > at) {
+                    try { page = Integer.parseInt(args[at]); } catch (NumberFormatException e) {
+                        lang().send(sender, "input.not-a-number", "%input%", Text.safe(args[at]));
+                        lang().send(sender, "usage.top", "%label%", label);
                         return true;
                     }
                 }
-                sendTop(sender, label, page);
+                sendTop(sender, label, page, period);
             }
         else if ("milestone".equals(sub) || "milestones".equals(sub)) {
                 if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return true; }
@@ -170,6 +178,18 @@ public final class ReferralCommand implements TabExecutor {
                 if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "admin")) return noPerm(sender);
                 plugin.reloadReport(sender, plugin.reloadAll());
             }
+        else if ("code".equals(sub)) {
+                if (!canUse(sender, "code")) return unknown(sender, label);
+                code(sender);
+            }
+        else if ("share".equals(sub)) {
+                if (!canUse(sender, "share")) return unknown(sender, label);
+                share(sender, label, args);
+            }
+        else if ("stats".equals(sub)) {
+                if (!dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "stats")) return noPerm(sender);
+                stats(sender);
+            }
         else if ("admin".equals(sub)) { admin(sender, label, args); }
         else if ("about".equals(sub) || "version".equals(sub) || "ver".equals(sub)) { about(sender, label, args); }
         else if ("migrate".equals(sub)) {
@@ -211,6 +231,9 @@ public final class ReferralCommand implements TabExecutor {
             case "top": return plugin.canOpen(s, "top");
             case "collect": return plugin.canOpen(s, "collect");
             case "invited": return plugin.canOpen(s, "invited");
+            case "code": return plugin.referrals().codes() && plugin.canOpen(s, "code");
+            case "share": return plugin.canOpen(s, "share");
+            case "stats": return dev.tmdevelopment.flarereferrals.util.Perms.has(s, "stats");
             case "milestone": case "milestones": return admin || plugin.canOpen(s, "preview") || plugin.canOpen(s, "menu");
             case "about": case "version": case "ver": return canVersion(s);
             case "event": case "events": return plugin.events().visibleTo(s);
@@ -291,6 +314,9 @@ public final class ReferralCommand implements TabExecutor {
         if (plugin.canOpen(s, "rewards")) lang().send(s, "help.lines.rewards", "%label%", label);
         if (plugin.canOpen(s, "top")) lang().send(s, "help.lines.top", "%label%", label);
         if (plugin.canOpen(s, "invited")) lang().send(s, "help.lines.invited", "%label%", label);
+        if (s instanceof Player && canUse(s, "code")) lang().send(s, "help.lines.code", "%label%", label);
+        if (s instanceof Player && canUse(s, "share")) lang().send(s, "help.lines.share", "%label%", label);
+        if (canUse(s, "stats")) lang().send(s, "help.lines.stats", "%label%", label);
         if (plugin.events().visibleTo(s) && plugin.events().active()) lang().send(s, "help.lines.event", "%label%", label);
         if (plugin.canOpen(s, "preview")) lang().send(s, "help.lines.milestone", "%label%", label);
         // /referrals claim is not listed: the [Collect] buttons in chat use it, /referrals collect is the one to type
@@ -474,38 +500,51 @@ public final class ReferralCommand implements TabExecutor {
         }
     }
 
-    private void sendTop(CommandSender to, String label, int wanted) {
+    /** @param period null = all the time, weekly or monthly */
+    private void sendTop(CommandSender to, String label, int wanted, String period) {
         int per = Math.max(1, Math.min(50, plugin.getConfig().getInt("top.chat-lines", 10)));
-        List<PlayerData> all = plugin.data().top(Integer.MAX_VALUE);
+        List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> all;
+        if (period == null) {
+            all = new ArrayList<>();
+            for (PlayerData d : plugin.data().top(Integer.MAX_VALUE)) all.add(plugin.periods().entry(d));
+        } else {
+            all = plugin.periods().current(period);
+        }
         int pages = Math.max(1, (all.size() + per - 1) / per);
         int page = Math.max(1, Math.min(pages, wanted));
         int from = (page - 1) * per;
-        List<PlayerData> top = new ArrayList<>(all.subList(Math.min(from, all.size()), Math.min(from + per, all.size())));
+        List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> top =
+                new ArrayList<>(all.subList(Math.min(from, all.size()), Math.min(from + per, all.size())));
         List<java.util.UUID> offline = new ArrayList<>();
-        for (PlayerData d : top) if (Bukkit.getPlayer(d.uuid()) == null) offline.add(d.uuid());
+        for (dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry d : top) if (Bukkit.getPlayer(d.uuid) == null) offline.add(d.uuid);
+        // "weekly " in the arrows: /referrals top weekly 2
+        String arg = period == null ? "" : period + " ";
+        String[] head = period == null ? new String[0] : new String[]{"%period-name%", lang().raw("period." + period + ".name"),
+                "%period%", lang().raw("period." + period + ".word"),
+                "%time%", plugin.events().duration(plugin.periods().millisLeft(period))};
         Runnable send = () -> {
             if (to instanceof Player && !((Player) to).isOnline()) return;
-            lang().send(to, "top.header");
+            lang().send(to, period == null ? "top.header" : "top.period-header", head);
             if (top.isEmpty()) {
-                lang().send(to, "top.empty");
+                lang().send(to, period == null ? "top.empty" : "top.period-empty", head);
             }
             List<String> lines = lang().lines("top.line");
             for (int i = 0; i < top.size(); i++) {
-                PlayerData d = top.get(i);
-                org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid());
+                dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry d = top.get(i);
+                org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid);
                 for (String line : lines) {
                     String text = Text.replace(line, "%position%", String.valueOf(from + i + 1),
-                            "%player%", d.name(), "%invites%", String.valueOf(d.invites()));
+                            "%player%", d.name, "%invites%", String.valueOf(d.invites));
                     // PlaceholderAPI placeholders (%luckperms_prefix%...) are of the player of this line
                     dev.tmdevelopment.flarereferrals.util.Platform.send(to, Text.parseAbout(text, who));
                 }
             }
             if (pages > 1) {
-                // « page 2/5 »: the arrows run /referrals top <page>
+                // « page 2/5 »: the arrows run /referrals top [weekly] <page>
                 String[] ph = {"%label%", label, "%page%", String.valueOf(page), "%pages%", String.valueOf(pages)};
-                String prev = page > 1 ? Text.replace(lang().raw("top.previous"), "%target%", String.valueOf(page - 1), "%label%", label)
+                String prev = page > 1 ? Text.replace(lang().raw("top.previous"), "%target%", arg + (page - 1), "%label%", label)
                         : lang().raw("top.no-previous");
-                String next = page < pages ? Text.replace(lang().raw("top.next"), "%target%", String.valueOf(page + 1), "%label%", label)
+                String next = page < pages ? Text.replace(lang().raw("top.next"), "%target%", arg + (page + 1), "%label%", label)
                         : lang().raw("top.no-next");
                 for (String line : lang().lines("top.pages")) {
                     // previous / next first: their text can hold {page} too
@@ -514,11 +553,110 @@ public final class ReferralCommand implements TabExecutor {
                             to instanceof Player ? (Player) to : null));
                 }
             }
-            lang().send(to, "top.footer");
+            if (period == null) lang().send(to, "top.footer");
+            else lang().send(to, "top.period-footer", concat(head, "%label%", label));
         };
         // offline players: LuckPerms loads their rank first
         if (!String.join("", lang().lines("top.line")).contains("%")
                 || !dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.load(plugin, offline, send)) send.run();
+    }
+
+    private static String[] concat(String[] a, String... b) {
+        String[] out = new String[a.length + b.length];
+        System.arraycopy(a, 0, out, 0, a.length);
+        System.arraycopy(b, 0, out, a.length, b.length);
+        return out;
+    }
+
+    // ---------------------------------------------------------------- code, share, stats
+
+    /** /referrals code: the personal code of the player, to give to friends instead of the name. */
+    private void code(CommandSender sender) {
+        if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return; }
+        Player p = (Player) sender;
+        plugin.referrals().code(p, c -> {
+            if (!p.isOnline()) return;
+            if (c == null) { lang().send(p, "general.database-error"); return; }
+            lang().send(p, "code.show", "%code%", c, "%player%", p.getName());
+        });
+    }
+
+    private final java.util.Map<java.util.UUID, Long> lastShare = new java.util.HashMap<>();
+
+    /** /referrals share [chat]: a ready message to send to friends (copy it), or to post in the chat. */
+    private void share(CommandSender sender, String label, String[] args) {
+        if (!(sender instanceof Player)) { lang().send(sender, "general.players-only"); return; }
+        Player p = (Player) sender;
+        boolean chat = args.length >= 2 && args[1].equalsIgnoreCase("chat");
+        java.util.function.Consumer<String> go = c -> {
+            if (!p.isOnline()) return;
+            String address = plugin.getConfig().getString("share.address", "");
+            String text = Text.replace(plugin.getConfig().getString(c == null ? "share.text-no-code" : "share.text",
+                    "Join {address} and write /referrals {player}"),
+                    "%player%", p.getName(), "%code%", c == null ? "" : c,
+                    "%address%", address == null || address.trim().isEmpty() ? lang().raw("share.no-address") : address.trim());
+            // the text goes into chat tags (click to copy): no tag characters
+            String safe = text.replace("'", "").replace("<", "").replace(">", "");
+            if (!chat) {
+                lang().send(p, "share.preview", "%text%", safe, "%label%", label);
+                return;
+            }
+            int minutes = Math.max(0, plugin.getConfig().getInt("share.chat-cooldown-minutes", 10));
+            long now = System.currentTimeMillis();
+            Long last = lastShare.get(p.getUniqueId());
+            if (minutes > 0 && last != null && now - last < minutes * 60_000L
+                    && !dev.tmdevelopment.flarereferrals.util.Perms.has(p, "admin")) {
+                long left = (minutes * 60_000L - (now - last)) / 1000;
+                lang().send(p, "share.cooldown", "%time%", plugin.events().duration(left * 1000));
+                return;
+            }
+            lastShare.put(p.getUniqueId(), now);
+            // forget only waits that are over
+            lastShare.values().removeIf(t -> now - t >= minutes * 60_000L);
+            for (String line : lang().lines("share.broadcast")) {
+                dev.tmdevelopment.flarereferrals.util.Platform.broadcast(Text.parse(Text.replace(line,
+                        "%player%", p.getName(), "%text%", safe, "%label%", label), p));
+            }
+        };
+        if (canUse(p, "code")) plugin.referrals().code(p, go::accept);
+        else go.accept(null);
+    }
+
+    /** /referrals stats: invites of today, this week, this month and more, for the staff. */
+    private void stats(CommandSender sender) {
+        dev.tmdevelopment.flarereferrals.service.PeriodTops pt = plugin.periods();
+        long now = System.currentTimeMillis();
+        long week = pt.start("weekly", now), month = pt.start("monthly", now);
+        int players = 0, referred = 0, pending = 0;
+        for (PlayerData d : plugin.data().snapshotView()) {
+            players++;
+            if (d.referredBy() == null) continue;
+            if (d.pendingInvite()) pending++;
+            else referred++;
+        }
+        int[] waiting = pt.waiting();
+        lang().send(sender, "stats.lines",
+                "%today%", String.valueOf(pt.total(pt.today(), Long.MAX_VALUE)),
+                "%week%", String.valueOf(pt.total(week, Long.MAX_VALUE)),
+                "%month%", String.valueOf(pt.total(month, Long.MAX_VALUE)),
+                "%total%", String.valueOf(referred),
+                "%pending%", String.valueOf(pending),
+                "%players%", String.valueOf(players),
+                "%collect%", String.valueOf(waiting[0]),
+                "%queued%", String.valueOf(waiting[1]),
+                "%week-top%", topLine(pt.current("weekly")),
+                "%month-top%", topLine(pt.current("monthly")));
+    }
+
+    /** "Alex 5, Steve 3, Bob 2" (the first three). */
+    private String topLine(List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> list) {
+        if (list.isEmpty()) return lang().raw("stats.nobody");
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < Math.min(3, list.size()); i++) {
+            parts.add(Text.replace(lang().raw("stats.top-part"), "%player%", list.get(i).name,
+                    "%invites%", String.valueOf(list.get(i).invites)));
+        }
+        return String.join(lang().raw("stats.separator"), parts);
     }
 
     // ---------------------------------------------------------------- admin
@@ -637,6 +775,7 @@ public final class ReferralCommand implements TabExecutor {
         if (args.length == 1) {
             List<String> opts = new ArrayList<>(dev.tmdevelopment.flarereferrals.util.J8.list("help", "claim"));
             for (String k : dev.tmdevelopment.flarereferrals.util.J8.list("info", "menu", "rewards", "top", "collect", "invited")) if (plugin.canOpen(sender, k)) opts.add(k);
+            for (String k : dev.tmdevelopment.flarereferrals.util.J8.list("code", "share", "stats")) if (canUse(sender, k)) opts.add(k);
             if (plugin.events().canManage(sender) || (plugin.events().visibleTo(sender) && plugin.events().active())) opts.add("event");
             if (plugin.canOpen(sender, "preview")) opts.add("milestone");
             if (admin) opts.addAll(dev.tmdevelopment.flarereferrals.util.J8.list("settings", "layout", "reload", "admin", "migrate"));
@@ -666,6 +805,10 @@ public final class ReferralCommand implements TabExecutor {
                 if (plugin.canOpen(sender, "invited")) opts.add("chat");
                 if (dev.tmdevelopment.flarereferrals.util.Perms.has(sender, "info.others")) opts.addAll(onlineNames());
                 filter(opts, args[1], out);
+            } else if (sub.equals("top") && plugin.canOpen(sender, "top")) {
+                filter(dev.tmdevelopment.flarereferrals.util.J8.list("weekly", "monthly", "2"), args[1], out);
+            } else if (sub.equals("share") && canUse(sender, "share")) {
+                filter(dev.tmdevelopment.flarereferrals.util.J8.list("chat"), args[1], out);
             } else if (sub.equals("migrate") && admin) {
                 filter(dev.tmdevelopment.flarereferrals.util.J8.list("yaml", "sqlite", "mysql"), args[1], out);
             } else if (sub.equals("admin") && admin) {

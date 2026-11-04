@@ -647,6 +647,35 @@ public final class SqlStorage implements Storage {
         }
 
         @Override
+        public boolean setCode(UUID uuid, String code) {
+            // always written in capitals (the search is exact, so the database can use the column directly)
+            String c2 = cut(code, 32).toUpperCase(java.util.Locale.ROOT);
+            try (PreparedStatement ps = c.prepareStatement("SELECT uuid FROM " + tPlayers + " WHERE code = ?")) {
+                ps.setString(1, c2);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) if (!uuid.toString().equals(rs.getString(1))) return false;
+                }
+            } catch (SQLException e) {
+                throw new Fail(e);
+            }
+            ensure(uuid, null);
+            touched.add(uuid);
+            update("UPDATE " + tPlayers + " SET code = ? WHERE uuid = ?", c2, uuid.toString());
+            return true;
+        }
+
+        @Override
+        public boolean claim(String key) {
+            try {
+                update("INSERT INTO " + tMeta + " (k, v) VALUES (?, ?)", cut("claim:" + key, 64), String.valueOf(System.currentTimeMillis()));
+                return true;
+            } catch (Fail f) {
+                if (duplicate(f.cause)) return false; // another server was first
+                throw f;
+            }
+        }
+
+        @Override
         public String meta(String key) {
             try (PreparedStatement ps = c.prepareStatement("SELECT v FROM " + tMeta + " WHERE k = ?")) {
                 ps.setString(1, cut(key, 64));

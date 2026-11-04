@@ -53,6 +53,17 @@ public interface Ops {
 
     void addPlaytime(UUID uuid, long seconds);
 
+    /** Personal code of a player (/referrals code). false when another player already has it. */
+    boolean setCode(UUID uuid, String code);
+
+    /**
+     * Only the first server that asks gets true (the weekly top rewards of a week are given once on a network).
+     * Without a database there is one server: always true.
+     */
+    default boolean claim(String key) {
+        return true;
+    }
+
     /** A shared value of the network (the reward event...), null when unknown. Only databases keep them. */
     default String meta(String key) {
         return null;

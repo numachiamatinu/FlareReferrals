@@ -10,7 +10,7 @@ commands:
   referrals:
     description: FlareReferrals main command
     aliases: [freferrals, fref, freferral, referral]
-    usage: /referrals <player|info|menu|collect|rewards|top|invited|milestone|event|about>
+    usage: /referrals <player|code|info|menu|collect|rewards|top|invited|share|milestone|event|about>
 
 permissions:
   flarereferrals.use:
@@ -37,6 +37,15 @@ permissions:
   flarereferrals.invited:
     description: /referrals invited, the players you invited (also needs player-access.invited, off by default)
     default: true
+  flarereferrals.code:
+    description: /referrals code, your personal code to give to friends (also needs player-access.code)
+    default: true
+  flarereferrals.share:
+    description: /referrals share, a ready message to send to friends or post in chat (also needs player-access.share)
+    default: true
+  flarereferrals.stats:
+    description: /referrals stats, invites of today, this week and this month for the staff
+    default: op
   flarereferrals.info.others:
     description: See the referral info and the invited players of other players
     default: op
@@ -47,6 +56,7 @@ permissions:
       flarereferrals.info.others: true
       flarereferrals.command.version: true
       flarereferrals.event: true
+      flarereferrals.stats: true
   flarereferrals.event:
     description: /referrals event start / stop, reward events (also needs events.enabled in config.yml)
     default: op

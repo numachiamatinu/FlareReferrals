@@ -107,6 +107,33 @@ public final class PapiExpansion extends PlaceholderExpansion {
 
     private String value(OfflinePlayer player, String params) {
         String p = params.toLowerCase(java.util.Locale.ROOT);
+        if (p.startsWith("top_weekly_") || p.startsWith("top_monthly_")) {
+            // top_weekly_<n>_name / _invites / _line
+            String[] parts = p.split("_");
+            if (parts.length != 4 || plugin.periods() == null) return "";
+            int pos;
+            try { pos = Integer.parseInt(parts[2]); } catch (NumberFormatException e) { return ""; }
+            java.util.List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> top = plugin.periods().current(parts[1]);
+            if (pos < 1 || pos > top.size()) {
+                if (parts[3].equals("invites")) return "0";
+                if (parts[3].equals("line")) return "";
+                return colored(text("nobody", "-"), null);
+            }
+            dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry e = top.get(pos - 1);
+            switch (parts[3]) {
+                case "invites": return String.valueOf(e.invites);
+                case "line":
+                    return colored(dev.tmdevelopment.flarereferrals.util.Text.replace(
+                            text("top-line", "&#ff7a6b#{position} &f{player} &7- &#ff7a6b{invites}"),
+                            "%position%", String.valueOf(pos), "%player%", e.name, "%invites%", String.valueOf(e.invites)),
+                            org.bukkit.Bukkit.getOfflinePlayer(e.uuid));
+                default: return e.name;
+            }
+        }
+        if ((p.equals("weekly_time") || p.equals("monthly_time")) && plugin.periods() != null) {
+            String period = p.substring(0, p.indexOf('_'));
+            return plugin.events().duration(plugin.periods().millisLeft(period));
+        }
         if (p.startsWith("top_")) {
             String[] parts = p.split("_");
             if (parts.length != 3) return "";
@@ -145,6 +172,16 @@ public final class PapiExpansion extends PlaceholderExpansion {
         switch (p) {
             case "invites":
                 return String.valueOf(d == null ? 0 : d.invites());
+            case "weekly_invites":
+            case "monthly_invites":
+                return String.valueOf(plugin.periods() == null ? 0 : plugin.periods().invites(p.substring(0, p.indexOf('_')), player.getUniqueId()));
+            case "weekly_position":
+            case "monthly_position": {
+                int pos = plugin.periods() == null ? 0 : plugin.periods().position(p.substring(0, p.indexOf('_')), player.getUniqueId());
+                return pos > 0 ? String.valueOf(pos) : colored(text("nobody", "-"), null);
+            }
+            case "code":
+                return d == null || d.code() == null ? "" : d.code().toUpperCase(java.util.Locale.ROOT);
             case "invited_count":
                 return String.valueOf(invited(player.getUniqueId())[0]);
             case "pending_invites":

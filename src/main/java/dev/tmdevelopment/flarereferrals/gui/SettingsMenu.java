@@ -50,6 +50,8 @@ public final class SettingsMenu extends Menu {
             // off until the admin wants them
             new Toggle(19, "invite-hint.enabled", "invite-hint", Material.OAK_SIGN, false),
             new Toggle(25, "events.enabled", "events", Material.FIREWORK_ROCKET, false),
+            new Toggle(28, "active-friends.enabled", "active-friends", Material.TOTEM_OF_UNDYING, false),
+            new Toggle(37, "period-top.enabled", "period-top", Material.EMERALD, false),
     };
 
     public SettingsMenu(FlareReferrals plugin, Player viewer) {

@@ -30,7 +30,10 @@ help:
     menu: " &#ff7a6b/{label} menu &7- rewards menu"
     collect: " &#ff7a6b/{label} collect &7- rewards to collect"
     rewards: " &#ff7a6b/{label} rewards &7- inviter and welcome rewards"
-    top: " &#ff7a6b/{label} top [page] &7- top inviters"
+    top: " &#ff7a6b/{label} top [weekly|monthly] &7- top inviters"
+    code: " &#ff7a6b/{label} code &7- your code to give to friends"
+    share: " &#ff7a6b/{label} share &7- a message to send to your friends"
+    stats: " &#ff7a6b/{label} stats &7- invites today, this week and this month"
     invited: " &#ff7a6b/{label} invited &7- the players you invited"
     event: " &#ff7a6b/{label} event &7- the reward event running now"
     milestone: " &#ff7a6b/{label} milestone <n> &7- rewards of a milestone"
@@ -143,6 +146,15 @@ top:
   pages: " {previous} &7Page &f{page}&7/&f{pages} {next}"
   previous: "<click:run_command:'/{label} top {target}'><hover:show_text:'&7Previous page'>&#ff7a6b&l«</hover></click>"
   next: "<click:run_command:'/{label} top {target}'><hover:show_text:'&7Next page'>&#ff7a6b&l»</hover></click>"
+  # /referrals top weekly / monthly. {period-name} = Weekly / Monthly, {period} = week / month, {time} = time left
+  period-header:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>{period-name} TOP</bold></gradient> &7· ends in &f{time}"
+    - ""
+  period-empty: " &7Nobody invited anyone this {period} yet."
+  period-footer:
+    - ""
+    - " <click:run_command:'/{label} top'><hover:show_text:'&7Best inviters of all time'>&#ff7a6b&n[All time]</hover></click> <click:run_command:'/{label} top weekly'><hover:show_text:'&7This week'>&#ff7a6b&n[Week]</hover></click> <click:run_command:'/{label} top monthly'><hover:show_text:'&7This month'>&#ff7a6b&n[Month]</hover></click>"
   no-previous: "&8&l«"
   no-next: "&8&l»"
   footer: ""
@@ -214,6 +226,7 @@ admin:
 # Shown when a command is written incomplete or wrong. Lines are clickable: they fill the chat bar.
 usage:
   milestone: "{prefix}&7Use &#ff7a6b/{label} milestone <amount>"
+  top: "{prefix}&7Use &#ff7a6b/{label} top [weekly|monthly] [page]"
   by: "{prefix}&7Use &#ff7a6b/{label} by <player> &7with the name of the player who invited you"
   migrate:
     - "{prefix}&#ff7a6b/{label} migrate <yaml|sqlite|mysql> [merge]"
@@ -465,3 +478,58 @@ event:
     disabled: "{prefix}&cEvents are off. &7Turn them on in &f/referrals settings &7or with &fevents.enabled: true &7in config.yml."
     bad-multiplier: "{prefix}&f{input} &cis not a valid multiplier. &7Use a number above 1 and up to {max}, e.g. 2 or 1.5."
     bad-time: "{prefix}&f{input} &cis not a valid time. &7Examples: 30m, 2h, 1d, 1h30m."
+
+# Weekly and monthly top (config.yml period-top)
+period:
+  weekly:
+    name: "WEEKLY"
+    word: "week"
+  monthly:
+    name: "MONTHLY"
+    word: "month"
+  # When a week / month ends (period-top.announce). The line with {line} is repeated for the first players
+  ended:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>{period-name} TOP</bold></gradient> &7· the {period} is over!"
+    - "{line}"
+    - ""
+  ended-line: " &#ff7a6b#{position} &f{player} &7- {invites} invites"
+
+# /referrals code (config.yml codes). {code} {player}
+code:
+  show:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>YOUR CODE</bold></gradient>"
+    - " <click:copy_to_clipboard:'{code}'><hover:show_text:'&7Click to copy'>&#ff7a6b&l{code}</hover></click> &8(click to copy)"
+    - " &7Your friends write &#ff7a6b/referrals {code} &7or &#ff7a6b/referrals {player}"
+    - ""
+
+# /referrals share (config.yml share). {text} = share.text with the placeholders already filled
+share:
+  preview:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>INVITE YOUR FRIENDS</bold></gradient>"
+    - " &f{text}"
+    - " <click:copy_to_clipboard:'{text}'><hover:show_text:'&7Copy it and send it to your friends'>&#ff7a6b&n[Copy]</hover></click> <click:run_command:'/{label} share chat'><hover:show_text:'&7Post it in the chat'>&#ff7a6b&n[Post in chat]</hover></click>"
+    - ""
+  broadcast:
+    - "{prefix}&f{player}&7: {text}"
+  cooldown: "{prefix}&7You can post it again in &f{time}&7."
+  # {address} when share.address is empty
+  no-address: "the server"
+
+# /referrals stats (flarereferrals.stats)
+stats:
+  lines:
+    - ""
+    - " <gradient:#ff5f6d:#ffc371><bold>REFERRAL STATS</bold></gradient>"
+    - " &7Invites today: &f{today} &8· &7this week: &f{week} &8· &7this month: &f{month}"
+    - " &7All invites: &f{total} &8· &7waiting for the playtime: &f{pending}"
+    - " &7Players: &f{players}"
+    - " &7Rewards waiting: &f{collect} &7to collect, &f{queued} &7for the next join"
+    - " &7Top of the week: {week-top}"
+    - " &7Top of the month: {month-top}"
+    - ""
+  top-part: "&f{player} &#ff7a6b{invites}"
+  separator: "&7, "
+  nobody: "&7nobody yet"

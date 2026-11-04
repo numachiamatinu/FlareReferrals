@@ -360,6 +360,8 @@ lang_en_yml:
   old: '{prefix}&7Referral event: rewards &#ff7a6bx{multiplier} &7for &f{time} &7more.'
 - path: help.lines.top
   old: ' &#ff7a6b/{label} top &7- top inviters'
+- path: help.lines.top
+  old: ' &#ff7a6b/{label} top [page] &7- top inviters'
 menus_admin_yml:
 - path: layout.help.lore
   old:
