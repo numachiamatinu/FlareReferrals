@@ -37,6 +37,30 @@ elements:
     name: "&#ff7a6b#{position} &f{player}"
     lore:
       - "&7Invites: &#ff7a6b{invites}"
+  # all the time / this week / this month: the one shown glows. {time} = time left of the week / month
+  all-time:
+    slots: "46"
+    admin-only: false
+    material: "NETHER_STAR"
+    name: "&#ff7a6bAll time"
+    lore:
+      - "&7The best inviters ever."
+  weekly:
+    slots: "47"
+    admin-only: false
+    material: "CLOCK"
+    name: "&#ff7a6bThis week"
+    lore:
+      - "&7Invites of this week."
+      - "&7Ends in &f{time}"
+  monthly:
+    slots: "48"
+    admin-only: false
+    material: "BOOK"
+    name: "&#ff7a6bThis month"
+    lore:
+      - "&7Invites of this month."
+      - "&7Ends in &f{time}"
   back:
     slots: "49"
     admin-only: false
@@ -44,7 +68,7 @@ elements:
     name: "&c← Back"
     lore: []
 decorations:
-  - slots: "0-8,9,17,18,26,27,35,36,44,45-48,50-53"
+  - slots: "0-8,9,17,18,26,27,35,36,44,45,50-53"
     material: "RED_STAINED_GLASS_PANE"
     name: " "
     lore: []
@@ -57,4 +81,17 @@ decorations:
 texts:
   empty:
     name: "&cNobody yet"
+    lore: []
+  # weekly / monthly view with no invites yet. {period} = week / month
+  period-empty:
+    name: "&cNobody this {period} yet"
+    lore: []
+  all-time:
+    name: "&#ff7a6bAll time"
+    lore: []
+  weekly:
+    name: "&#ff7a6bThis week"
+    lore: []
+  monthly:
+    name: "&#ff7a6bThis month"
     lore: []

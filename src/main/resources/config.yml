@@ -124,6 +124,44 @@ active-friends:
   # false = they give no goals, true = they count all their playtime (turning it on may pay many goals at once)
   old-invites: false
 
+# ── Rank multipliers ────────────────────────────────────
+# Players with the permission flarereferrals.multiplier.<name> get their rewards multiplied (the highest one counts).
+# Give it with your permission plugin, e.g. LuckPerms: /lp group vip permission set flarereferrals.multiplier.vip
+# Operators don't get it unless the permission is really given to them. Works together with reward events (x2 * x1.5).
+multipliers:
+  enabled: false
+  ranks:
+    vip: 1.5
+    mvp: 2
+  # Items too, only by whole numbers (x2, x3): x1.5 gives the normal items
+  items: false
+  # Which rewards get it
+  rewards:
+    inviter: true
+    welcome: false
+    milestones: true
+    active-friends: true
+    period-top: false
+
+# ── Discord ─────────────────────────────────────────────
+# Messages in a Discord channel. Discord: channel settings > Integrations > Webhooks > New webhook > Copy URL.
+# Keep the URL secret (anyone with it can write in the channel). Mentions (@everyone, roles) are never sent.
+# A message with "" is not sent. Discord markdown works: **bold**, *italic*
+discord:
+  enabled: false
+  url: ""
+  username: "Referrals"
+  # A colored box (embed) or plain text
+  embed: true
+  color: "#FF7A6B"
+  messages:
+    # {player} = new player, {inviter}, {invites} = invites of the inviter now
+    referral: "**{inviter}** invited **{player}** to the server! ({invites} invites)"
+    # {player} = the inviter, {milestone}, {invites}
+    milestone: "**{player}** reached **{milestone} invites**!"
+    # When a week / month ends (needs period-top.enabled). {period-name} {period} {winners}
+    period-top: "**{period-name} TOP** is over: {winners}"
+
 # ── Weekly and monthly top ──────────────────────────────
 # /referrals top weekly and /referrals top monthly show the invites of this week / month (always on).
 # With enabled: true the best inviters get the rewards of rewards.yml > period-top when the week / month ends,

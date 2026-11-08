@@ -246,6 +246,7 @@ public final class PeriodTops {
         String word = plugin.lang().raw("period." + period + ".word");
         // told only when it just ended (not when a server starts days later)
         boolean tell = now - to < 15 * 60_000L && cfg().getBoolean("period-top.announce", true) && !ranking.isEmpty();
+        discord(period, ranking, from, to, now);
         java.util.SortedMap<Integer, TopReward> rewards = cfg().getBoolean("period-top." + period + "-rewards", true)
                 ? plugin.rewards().top(period) : new java.util.TreeMap<Integer, TopReward>();
         if (rewards.isEmpty() || ranking.isEmpty()) {
@@ -289,6 +290,24 @@ public final class PeriodTops {
                 dev.tmdevelopment.flarereferrals.util.ReferralLog.log("TOP", e.name + " was #" + plan.get(i)[5] + " of the " + word
                         + " (" + e.invites + " invites): reward created");
             }
+        });
+    }
+
+    /** discord.messages.period-top: once on a network (claim), and only within a day after the end. */
+    private void discord(String period, List<Entry> ranking, long from, long to, long now) {
+        DiscordWebhook dc = plugin.discord();
+        if (dc == null || ranking.isEmpty() || now - to > 24 * 3_600_000L || !dc.wants("period-top")) return;
+        int lines = Math.max(1, Math.min(10, cfg().getInt("period-top.announce-lines", 3)));
+        StringBuilder winners = new StringBuilder();
+        for (int i = 0; i < Math.min(lines, ranking.size()); i++) {
+            if (i > 0) winners.append(", ");
+            winners.append(i + 1).append(". ").append(ranking.get(i).name).append(" (").append(ranking.get(i).invites).append(')');
+        }
+        String day = label(from);
+        String name = plugin.lang().raw("period." + period + ".name");
+        String word = plugin.lang().raw("period." + period + ".word");
+        plugin.data().run(ops -> ops.claim("discord-" + period + "-" + day), first -> {
+            if (first != null && first) dc.send("period-top", "%period-name%", name, "%period%", word, "%winners%", winners.toString());
         });
     }
 

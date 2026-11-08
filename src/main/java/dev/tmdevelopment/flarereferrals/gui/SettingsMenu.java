@@ -52,6 +52,8 @@ public final class SettingsMenu extends Menu {
             new Toggle(25, "events.enabled", "events", Material.FIREWORK_ROCKET, false),
             new Toggle(28, "active-friends.enabled", "active-friends", Material.TOTEM_OF_UNDYING, false),
             new Toggle(37, "period-top.enabled", "period-top", Material.EMERALD, false),
+            new Toggle(38, "multipliers.enabled", "multipliers", Material.GOLD_INGOT, false),
+            new Toggle(39, "discord.enabled", "discord", Material.BELL, false),
     };
 
     public SettingsMenu(FlareReferrals plugin, Player viewer) {

@@ -2,6 +2,21 @@
 
 Versions go up by one step for every update: 1.0.1, 1.0.2, 1.0.3...
 
+## 1.2.0
+### Added
+- Rank multipliers: `multipliers` in config.yml (default off). Players with `flarereferrals.multiplier.<name>` get
+  their rewards multiplied (e.g. VIP x1.5, MVP x2, the highest one counts). Choose which rewards get it (inviter,
+  welcome, milestones, active friends, weekly top); items only by whole numbers with `multipliers.items: true`.
+  Works together with reward events. Operators don't get it unless the permission is really given.
+- Discord: `discord` in config.yml (default off). Messages in a Discord channel through a webhook for new invites,
+  milestones and the winners of the weekly / monthly top. Embed or plain text, own texts, no mentions ever sent.
+- Top menu: buttons All time / This week / This month (slots 46-48, movable in the menu editor).
+- Active friends: `invited:` inside a goal of `rewards.yml > active-friends` gives a reward to the invited player
+  too when he reaches that playtime.
+- `/referrals settings`: switches for rank multipliers and Discord.
+
+The new options and texts are added to your config.yml, lang/en.yml and menus on the first start, the rest of the files is not touched.
+
 ## 1.1.0
 ### Added
 - Weekly and monthly top: `/referrals top weekly` and `/referrals top monthly` (with pages) show the invites of this

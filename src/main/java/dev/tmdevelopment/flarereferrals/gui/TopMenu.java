@@ -23,6 +23,8 @@ public final class TopMenu extends LayoutMenu {
     private final Menu parent;
     /** LuckPerms is asked once per open menu (a user it can't load must not reload the menu forever). */
     private boolean ranksLoaded;
+    /** null = all the time, weekly, monthly (buttons all-time / weekly / monthly) */
+    private String period;
 
     public TopMenu(FlareReferrals plugin, Player viewer, Menu parent) {
         super(plugin, viewer, "top");
@@ -41,6 +43,9 @@ public final class TopMenu extends LayoutMenu {
         Map<String, Material> m = new LinkedHashMap<>();
         m.put("entries", Material.PLAYER_HEAD);
         m.put("back", Material.ARROW);
+        m.put("all-time", Material.NETHER_STAR);
+        m.put("weekly", Material.CLOCK);
+        m.put("monthly", Material.BOOK);
         return m;
     }
 
@@ -50,28 +55,50 @@ public final class TopMenu extends LayoutMenu {
         return false;
     }
 
+    private void periodButton(String id, String which, Material icon) {
+        boolean shown = which == null ? period == null : which.equals(period);
+        String time = which == null ? "" : plugin.events().duration(plugin.periods().millisLeft(which));
+        element(id, new ItemStack(icon), "gui.top." + id, null, shown, e -> {
+            if (shown) return;
+            period = which;
+            ranksLoaded = false;
+            refresh();
+        }, "%time%", time);
+    }
+
     @Override
     protected void buildElements() {
         int amount = Math.max(1, slots("entries").size());
-        List<PlayerData> top = plugin.data().top(amount);
+        List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> top = new ArrayList<>();
+        if (period == null) {
+            for (PlayerData d : plugin.data().top(amount)) top.add(plugin.periods().entry(d));
+        } else {
+            List<dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry> all = plugin.periods().current(period);
+            top.addAll(all.subList(0, Math.min(amount, all.size())));
+        }
         List<ItemStack> items = new ArrayList<>();
         dev.tmdevelopment.flarereferrals.layout.MenuLayout.Element tpl = template("entries");
         String nameTpl = tpl.name != null ? tpl.name : lang().raw("gui.top.entry.name");
         List<String> loreTpl = tpl.lore != null ? tpl.lore : lang().lines("gui.top.entry.lore");
         List<java.util.UUID> offline = new ArrayList<>();
         for (int i = 0; i < top.size(); i++) {
-            PlayerData d = top.get(i);
-            String[] ph = {"%position%", String.valueOf(i + 1), "%player%", d.name(), "%invites%", String.valueOf(d.invites())};
+            dev.tmdevelopment.flarereferrals.service.PeriodTops.Entry d = top.get(i);
+            String[] ph = {"%position%", String.valueOf(i + 1), "%player%", d.name, "%invites%", String.valueOf(d.invites)};
             // PlaceholderAPI placeholders (%luckperms_prefix%...) are of the player of this entry, not of the viewer
-            org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid());
-            if (!who.isOnline()) offline.add(d.uuid());
+            org.bukkit.OfflinePlayer who = Bukkit.getOfflinePlayer(d.uuid);
+            if (!who.isOnline()) offline.add(d.uuid);
             items.add(new ItemBuilder(Heads.of(who))
                     .name(Text.itemAbout(Text.replace(nameTpl, ph), who))
                     .lore(Text.itemsAbout(Text.replace(loreTpl, ph), who))
                     .amount(Math.min(64, i + 1))
                     .build());
         }
-        list("entries", items, null, button(Material.BARRIER, "gui.top.empty"));
+        list("entries", items, null, button(Material.BARRIER, period == null ? "gui.top.empty" : "gui.top.period-empty",
+                period == null ? new String[0] : new String[]{"%period%", lang().raw("period." + period + ".word")}));
+        // all the time / this week / this month: the one shown glows
+        periodButton("all-time", null, Material.NETHER_STAR);
+        periodButton("weekly", "weekly", Material.CLOCK);
+        periodButton("monthly", "monthly", Material.BOOK);
         // offline players: drawn again once LuckPerms has loaded their rank
         if (!editMode && !ranksLoaded && dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.installed() && usesPlaceholders(nameTpl, loreTpl)) {
             if (dev.tmdevelopment.flarereferrals.hook.LuckPermsHook.load(plugin, offline, () -> {

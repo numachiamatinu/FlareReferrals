@@ -88,6 +88,8 @@ public final class ReferralService {
         /** New rewards waiting in the collect menu of the inviter / of the new player. */
         final List<RewardEntry> ready = new ArrayList<>();
         final List<RewardEntry> readyUser = new ArrayList<>();
+        /** Milestones reached now (Discord message). */
+        final List<Integer> milestones = new ArrayList<>();
 
         Outcome(int code) {
             this.code = code;
@@ -296,10 +298,13 @@ public final class ReferralService {
             RewardEntry.State state = m[2] == 1 ? RewardEntry.State.CLAIMABLE : RewardEntry.State.PENDING;
             if (state == RewardEntry.State.PENDING && !queue) {
                 // offline and the queue is off: lost, like before. The milestone counts as reached anyway
-                ops.addReward(target, uniq, "milestone:" + amount + ctx, RewardEntry.State.DELIVERED);
+                if (ops.addReward(target, uniq, "milestone:" + amount + ctx, RewardEntry.State.DELIVERED) != null && m[3] == 1) {
+                    out.milestones.add(amount);
+                }
                 continue;
             }
             RewardEntry e = ops.addReward(target, uniq, "milestone:" + amount + ctx, state);
+            if (e != null && m[3] == 1) out.milestones.add(amount);
             if (e != null && state == RewardEntry.State.CLAIMABLE && m[3] == 1) out.ready.add(e);
         }
     }
@@ -341,6 +346,13 @@ public final class ReferralService {
         notifyCollect(targetId, out.ready, false);
         Player t = Bukkit.getPlayer(targetId);
         if (t != null) deliverPending(t, false);
+        dev.tmdevelopment.flarereferrals.service.DiscordWebhook dc = plugin.discord();
+        if (dc != null) {
+            dc.send("referral", "%player%", userName, "%inviter%", targetReal, "%invites%", String.valueOf(out.invites));
+            for (int m : out.milestones) {
+                dc.send("milestone", "%player%", targetReal, "%milestone%", String.valueOf(m), "%invites%", String.valueOf(out.invites));
+            }
+        }
         if (cfg().getBoolean("referral.broadcast", false)) {
             for (String line : lang().lines("referral.broadcast")) {
                 broadcast(Text.replace(line, "%player%", userName, "%inviter%", targetReal,
@@ -440,6 +452,13 @@ public final class ReferralService {
         int played = playtimeMinutes(p, d) - base;
         for (dev.tmdevelopment.flarereferrals.reward.Goal g : plugin.rewards().goals()) {
             if (played < g.minutes()) break; // sorted by minutes
+            // the invited player's own reward for this goal (once per player)
+            dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited mine = g.invited();
+            String myUniq = "goal-invited:" + g.minutes();
+            if (mine != null && !d.hasUniq(myUniq) && goalBusy.add(p.getUniqueId() + myUniq)) {
+                grant(p.getUniqueId(), myUniq, mine.id() + "|" + inviter.name() + "|" + p.getName(), mine,
+                        created -> goalBusy.remove(p.getUniqueId() + myUniq));
+            }
             String uniq = "goal:" + g.minutes() + "@" + p.getUniqueId();
             if (inviter.hasUniq(uniq) || !goalBusy.add(uniq)) continue;
             String friend = p.getName();
@@ -520,6 +539,7 @@ public final class ReferralService {
         RewardSet set = plugin.rewards().resolve(e.key());
         if (set instanceof Milestone) return ((Milestone) set).name();
         if (set instanceof dev.tmdevelopment.flarereferrals.reward.Goal) return ((dev.tmdevelopment.flarereferrals.reward.Goal) set).name();
+        if (set instanceof dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited) return ((dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited) set).name();
         if (set instanceof dev.tmdevelopment.flarereferrals.reward.TopReward) return ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).name();
         if (e.key().equals("referral:inviter")) return lang().raw("gui.names.inviter");
         if (e.key().equals("referral:invited")) return lang().raw("gui.names.invited");
@@ -620,14 +640,20 @@ public final class ReferralService {
 
     /** Free inventory slots for the items of a reward (very big rewards are dropped as before). */
     private boolean fits(Player p, RewardSet set, RewardEntry e) {
-        int items = itemCount(set, e);
+        int items = itemCount(p, set, e);
         if (items == 0 || items > 36) return true;
         return freeSlots(p) >= items;
     }
 
-    /** Slots for the items of this reward, also when an event multiplies them. */
-    private int itemCount(RewardSet set, RewardEntry e) {
-        return itemCount(set) * multiplierItems(multiplierOf(e));
+    /** Slots for the items of this reward, also when an event or a rank multiplier multiplies them. */
+    private int itemCount(Player p, RewardSet set, RewardEntry e) {
+        return itemCount(set) * multiplierItems(multiplierOf(e)) * rankItems(p, set);
+    }
+
+    /** Items multiplied by the rank (multipliers.items, whole numbers only). */
+    private int rankItems(Player p, RewardSet set) {
+        double rank = rankMultiplier(p, set);
+        return rank >= 2 && cfg().getBoolean("multipliers.items", false) ? (int) Math.floor(rank) : 1;
     }
 
     /** Multiplier of a reward earned during a reward event (1 = none). */
@@ -701,7 +727,7 @@ public final class ReferralService {
             if (set == null || !set.enabled() || !allowedHere(set)) continue;
             found++;
             if (giving.contains(e.id())) continue; // already being collected (double click)
-            int need = itemCount(set, e);
+            int need = itemCount(p, set, e);
             if (need > 36) need = 0;
             if (need > free) {
                 full = true;
@@ -887,7 +913,7 @@ public final class ReferralService {
             for (RewardEntry e : taken) {
                 RewardSet set = plugin.rewards().resolve(e.key());
                 if (set != null && from == RewardEntry.State.CLAIMABLE) {
-                    int need = itemCount(set, e);
+                    int need = itemCount(now, set, e);
                     if (need > 36) need = 0;
                     if (need > free) {
                         // the inventory filled up meanwhile: back in the menu
@@ -970,7 +996,9 @@ public final class ReferralService {
         PlayerData d = plugin.data().get(p.getUniqueId());
         String milestone = set instanceof Milestone ? String.valueOf(((Milestone) set).amount()) : "";
         String goal = set instanceof dev.tmdevelopment.flarereferrals.reward.Goal
-                ? dev.tmdevelopment.flarereferrals.reward.Goal.time(((dev.tmdevelopment.flarereferrals.reward.Goal) set).minutes()) : "";
+                ? dev.tmdevelopment.flarereferrals.reward.Goal.time(((dev.tmdevelopment.flarereferrals.reward.Goal) set).minutes())
+                : set instanceof dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited
+                ? dev.tmdevelopment.flarereferrals.reward.Goal.time(((dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited) set).goal().minutes()) : "";
         boolean top = set instanceof dev.tmdevelopment.flarereferrals.reward.TopReward;
         String position = top ? String.valueOf(((dev.tmdevelopment.flarereferrals.reward.TopReward) set).position()) : "";
         String period = top ? lang().raw("period." + ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).period() + ".word") : "";
@@ -989,13 +1017,16 @@ public final class ReferralService {
                 "%multiplier%", ReferralEvents.format(multiplier)
         };
 
+        // rank multiplier (config.yml multipliers): flarereferrals.multiplier.<rank>, the highest one counts
+        double rank = rankMultiplier(p, set);
+        int rankItems = rankItems(p, set);
         boolean drop = cfg().getBoolean("rewards.drop-if-full", true);
         for (ItemStack it : set.items()) {
             if (it == null || it.getType().isAir()) continue;
             // given in stacks the item can really have ("ENDER_PEARL:64" = 4 stacks of 16, "DIAMOND_SWORD:3" = 3 swords):
             // some servers would put them all in one slot
             int max = Math.max(1, it.getMaxStackSize());
-            int total = Math.max(1, it.getAmount()) * multiplierItems(multiplier);
+            int total = Math.max(1, it.getAmount()) * multiplierItems(multiplier) * rankItems;
             while (total > 0) {
                 ItemStack one = it.clone();
                 one.setAmount(Math.min(max, total));
@@ -1006,7 +1037,7 @@ public final class ReferralService {
                 }
             }
         }
-        double money = currencyMultiplier(multiplier);
+        double money = currencyMultiplier(multiplier) * rank;
         for (Map.Entry<String, Double> e : set.currencies().entrySet()) {
             plugin.currencies().give(p, e.getKey(), e.getValue() * money);
         }
@@ -1023,13 +1054,45 @@ public final class ReferralService {
         ScreenEffects.show(plugin, p, set.display(), ph);
         sound(p, "reward");
         if (multiplies(set, multiplier)) lang().send(p, "event.bonus", "%multiplier%", ReferralEvents.format(multiplier));
+        boolean rankChanges = rank > 1 && (!set.currencies().isEmpty() || (rankItems > 1 && !set.items().isEmpty()));
+        if (rankChanges) lang().send(p, "multiplier.bonus", "%multiplier%", ReferralEvents.format(rank));
         String what = set instanceof Milestone ? "milestone " + milestone : parts[0].startsWith("referral:inviter") ? "inviter reward"
                 : parts[0].startsWith("referral:invited") ? "welcome reward"
+                : set instanceof dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited ? "reward for playing " + goal + " after the invite"
                 : !goal.isEmpty() ? "active friend reward (" + invited + " played " + goal + ")"
                 : top ? "#" + position + " " + ((dev.tmdevelopment.flarereferrals.reward.TopReward) set).period() + " top reward" : parts[0];
         boolean plain = invited.isEmpty() || set instanceof Milestone || top || !goal.isEmpty();
         dev.tmdevelopment.flarereferrals.util.ReferralLog.log("REWARD", p.getName() + " got the " + what + (plain ? "" : " (" + inviter + " <- " + invited + ")")
-                + (multiplies(set, multiplier) ? " x" + ReferralEvents.format(multiplier) + " (event)" : ""));
+                + (multiplies(set, multiplier) ? " x" + ReferralEvents.format(multiplier) + " (event)" : "")
+                + (rankChanges ? " x" + ReferralEvents.format(rank) + " (rank)" : ""));
+    }
+
+    /**
+     * config.yml multipliers: the highest flarereferrals.multiplier.&lt;name&gt; the player really has (set by a
+     * permission plugin; operators don't get them by default) for the kinds of reward turned on there. 1 = none.
+     */
+    public double rankMultiplier(Player p, RewardSet set) {
+        FileConfiguration c = cfg();
+        if (!c.getBoolean("multipliers.enabled", false)) return 1.0;
+        String kind = set instanceof Milestone ? "milestones"
+                : set instanceof dev.tmdevelopment.flarereferrals.reward.Goal
+                || set instanceof dev.tmdevelopment.flarereferrals.reward.Goal.ForInvited ? "active-friends"
+                : set instanceof dev.tmdevelopment.flarereferrals.reward.TopReward ? "period-top"
+                : set == plugin.rewards().inviter() ? "inviter"
+                : set == plugin.rewards().invited() ? "welcome" : null;
+        if (kind == null || !c.getBoolean("multipliers.rewards." + kind, false)) return 1.0;
+        org.bukkit.configuration.ConfigurationSection ranks = c.getConfigurationSection("multipliers.ranks");
+        if (ranks == null) return 1.0;
+        // a wildcard (* or flarereferrals.*) would give every multiplier: only nodes really given count
+        if (p.isPermissionSet("flarereferrals.multiplier.x-wildcard-check")) return 1.0;
+        double best = 1.0;
+        for (String name : ranks.getKeys(false)) {
+            String node = "flarereferrals.multiplier." + name.toLowerCase(java.util.Locale.ROOT);
+            if (!p.isPermissionSet(node) || !p.hasPermission(node)) continue;
+            double v = ranks.getDouble(name, 1.0);
+            if (v > best) best = v;
+        }
+        return Math.min(10.0, best);
     }
 
     // ------------------------------------------------------------------ network

@@ -162,7 +162,8 @@ milestones:
 
 # Rewards for the inviter when a player he invited keeps playing. The key is the playtime of the invited player
 # after the invite, in minutes (60 = 1 hour). Each goal is given once for every invited player. Turn it on in config.yml
-# (active-friends.enabled: true). {invited} = the friend, {goal} = the playtime ("5h")
+# (active-friends.enabled: true). {invited} = the friend, {goal} = the playtime ("5h").
+# "invited:" inside a goal = a reward for the invited player too (welcome bonus for staying)
 active-friends:
   '60':
     name: "&#ff7a6bFriend played 1 hour"
@@ -170,12 +171,25 @@ active-friends:
       money: 250
     messages:
       - "{prefix}&f{invited} &7played &f{goal}&7: &a+$250 &7for inviting him!"
+    # optional: a reward for the invited player too, when he reaches the same playtime ({inviter} {goal})
+    invited:
+      name: "&#ff7a6bYou played 1 hour"
+      currencies:
+        money: 100
+      messages:
+        - "{prefix}&7You played &f{goal} &7since &f{inviter} &7invited you: &a+$100&7!"
   '300':
     name: "&#ff7a6bFriend played 5 hours"
     currencies:
       money: 1000
     messages:
       - "{prefix}&f{invited} &7played &f{goal}&7: &a+$1000 &7for inviting him!"
+    invited:
+      name: "&#ff7a6bYou played 5 hours"
+      currencies:
+        money: 500
+      messages:
+        - "{prefix}&7You played &f{goal} &7since &f{inviter} &7invited you: &a+$500&7!"
   '600':
     name: "<gradient:#ff5f6d:#ffc371>Friend played 10 hours</gradient>"
     items:

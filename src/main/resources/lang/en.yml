@@ -479,6 +479,10 @@ event:
     bad-multiplier: "{prefix}&f{input} &cis not a valid multiplier. &7Use a number above 1 and up to {max}, e.g. 2 or 1.5."
     bad-time: "{prefix}&f{input} &cis not a valid time. &7Examples: 30m, 2h, 1d, 1h30m."
 
+# Rank multipliers (config.yml multipliers). {multiplier}
+multiplier:
+  bonus: "{prefix}&7Rank bonus: &#ff7a6bx{multiplier}"
+
 # Weekly and monthly top (config.yml period-top)
 period:
   weekly:

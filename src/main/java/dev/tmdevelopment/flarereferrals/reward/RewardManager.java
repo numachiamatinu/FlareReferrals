@@ -226,6 +226,10 @@ public final class RewardManager {
     /** Resolves a pending reward key ("referral:inviter", "referral:invited", "milestone:5", "goal:60", "top:weekly:1"). */
     public RewardSet resolve(String key) {
         if (key.startsWith("goal:")) return goals.get(number(key.substring("goal:".length())));
+        if (key.startsWith("goal-invited:")) {
+            Goal g = goals.get(number(key.substring("goal-invited:".length())));
+            return g == null ? null : g.invited();
+        }
         if (key.startsWith("top:")) {
             String[] p = key.split(":");
             return p.length == 3 ? top(p[1]).get(number(p[2])) : null;

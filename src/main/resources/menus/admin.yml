@@ -60,6 +60,17 @@ settings:
       - "&7Rewards for the best inviters"
       - "&7when a week / month ends."
       - "&7Rewards: &frewards.yml > period-top"
+    multipliers:
+      name: "&fRank multipliers"
+      lore:
+      - "&7Players with flarereferrals.multiplier.<rank>"
+      - "&7get more (config.yml > multipliers)."
+    discord:
+      name: "&fDiscord messages"
+      lore:
+      - "&7New invites, milestones and the weekly"
+      - "&7winners in a Discord channel."
+      - "&7Set discord.url in config.yml first."
     inviter-title:
       name: "&fTitle for the inviter"
       lore:

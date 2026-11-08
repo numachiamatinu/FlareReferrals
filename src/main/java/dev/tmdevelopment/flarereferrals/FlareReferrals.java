@@ -31,6 +31,7 @@ public final class FlareReferrals extends JavaPlugin {
     private ChatInput chatInput;
     private dev.tmdevelopment.flarereferrals.service.ReferralEvents events;
     private dev.tmdevelopment.flarereferrals.service.PeriodTops periods;
+    private dev.tmdevelopment.flarereferrals.service.DiscordWebhook discord;
     private dev.tmdevelopment.flarereferrals.service.InviteHint hints;
     private TMDStats stats;
     private dev.tmdevelopment.flarereferrals.update.UpdateChecker updates;
@@ -134,6 +135,7 @@ public final class FlareReferrals extends JavaPlugin {
         referrals.checkServers();
         events = new dev.tmdevelopment.flarereferrals.service.ReferralEvents(this);
         events.load();
+        discord = new dev.tmdevelopment.flarereferrals.service.DiscordWebhook(this);
         periods = new dev.tmdevelopment.flarereferrals.service.PeriodTops(this);
         periods.load();
         hints = new dev.tmdevelopment.flarereferrals.service.InviteHint(this);
@@ -191,6 +193,7 @@ public final class FlareReferrals extends JavaPlugin {
         if (stats != null) stats.shutdown();
         if (events != null) events.shutdown();
         if (hints != null) hints.shutdown();
+        if (discord != null) discord.shutdown();
         dev.tmdevelopment.flarereferrals.service.ScreenEffects.clear();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (dev.tmdevelopment.flarereferrals.gui.Menu.openFor(p) != null) {
@@ -334,7 +337,8 @@ public final class FlareReferrals extends JavaPlugin {
         for (String key : defaults.getKeys(true)) {
             if (defaults.isConfigurationSection(key)) continue;
             String userList = key.startsWith("currencies.") ? "currencies"
-                    : key.startsWith("auto-install.plugins.") ? "auto-install.plugins" : null;
+                    : key.startsWith("auto-install.plugins.") ? "auto-install.plugins"
+                    : key.startsWith("multipliers.ranks.") ? "multipliers.ranks" : null;
             if (userList != null && cfg.isSet(userList)) continue;
             if (!cfg.isSet(key)) out.add(key);
         }
@@ -504,6 +508,7 @@ public final class FlareReferrals extends JavaPlugin {
     public ChatInput chatInput() { return chatInput; }
     public dev.tmdevelopment.flarereferrals.service.ReferralEvents events() { return events; }
     public dev.tmdevelopment.flarereferrals.service.PeriodTops periods() { return periods; }
+    public dev.tmdevelopment.flarereferrals.service.DiscordWebhook discord() { return discord; }
     public dev.tmdevelopment.flarereferrals.service.InviteHint hints() { return hints; }
     public dev.tmdevelopment.flarereferrals.update.UpdateChecker updates() { return updates; }
 
